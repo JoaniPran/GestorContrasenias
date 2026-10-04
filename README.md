@@ -11,3 +11,33 @@
 Antes de actualizar, cierra el programa y haz una copia de seguridad de `usuarios.csv` y de cada archivo `contrasenas_<usuario>.csv`. No borres esos archivos: contienen las cuentas y bóvedas.
 
 Los datos se guardan en el directorio de trabajo desde el que se ejecuta la aplicación. La protección de archivos depende también de la seguridad de la cuenta y del dispositivo donde se ejecuta KeyVault.
+
+## Generar una distribución portable en Linux
+
+Se necesita Maven y un JDK que incluya `jpackage`. Desde la raíz del proyecto, ejecuta:
+
+```sh
+mvn clean package
+mkdir -p target/portable-input portable
+cp target/gestor-contrasenas-1.0.0.jar target/portable-input/
+
+jpackage \
+	--type app-image \
+	--name KeyVault \
+	--app-version 1.0.0 \
+	--input target/portable-input \
+	--main-jar gestor-contrasenas-1.0.0.jar \
+	--main-class gestorcontrasenas.GestorContrasenas \
+	--dest portable
+```
+
+El resultado queda en `portable/KeyVault/` e incluye un runtime de Java, por lo que no hace falta instalar Java en la máquina donde se ejecuta. Para iniciarlo desde una terminal:
+
+```sh
+cd portable/KeyVault
+./bin/KeyVault
+```
+
+KeyVault guarda sus archivos en el directorio de trabajo. Para que los datos viajen con la distribución, copia `usuarios.csv` y `contrasenas_<usuario>.csv` dentro de `portable/KeyVault/` **antes del primer inicio**. No compartas la distribución si contiene esos archivos: son privados. La carpeta `portable/` está excluida de Git.
+
+Este procedimiento genera una aplicación portable para Linux y la arquitectura del equipo donde se ejecuta. Para Windows o macOS, genera el paquete en el sistema correspondiente.
