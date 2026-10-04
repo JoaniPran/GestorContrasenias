@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=KeyVault
+Comment=Gestor de contraseñas portable
+Exec=/bin/sh -c "APP_DIR=\\$(dirname \"\\$1\"); cd \"\\$APP_DIR\"; exec ./bin/KeyVault" KeyVault %k
+Path=/
+Terminal=false
+StartupNotify=true
+Categories=Utility;

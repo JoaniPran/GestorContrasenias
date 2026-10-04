@@ -1,0 +1,9 @@
+KeyVault portable para Linux x86_64
+
+Abre KeyVault.desktop para iniciar la aplicacion sin terminal.
+Tambien puedes ejecutar ./ejecutar-portable.sh desde una terminal.
+La carpeta incluye un runtime Java; no requiere instalar Java ni Maven.
+
+Los archivos usuarios.csv y contrasenas_joani.csv contienen datos privados.
+Conserva ambos archivos junto a este LEEME.txt al mover la carpeta y no
+compartas el paquete con otras personas.
