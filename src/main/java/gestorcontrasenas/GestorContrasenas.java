@@ -9,15 +9,20 @@ import gestorcontrasenas.interfaz.TableRowTransferHandler;
 import gestorcontrasenas.modelo.RegistroContrasena;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import static gestorcontrasenas.interfaz.PaletaColores.*;
 
@@ -35,17 +40,21 @@ public class GestorContrasenas extends JFrame {
 
     private JTextField txtCuenta;
     private JTextField txtUsuario;
+    private JTextField txtBuscar;
     private JPasswordField txtPassword;
     private JTable tabla;
     private DefaultTableModel modeloTabla;
+    private TableRowSorter<DefaultTableModel> ordenadorTabla;
     private PanelRedondeado panelFormulario;
-    private JLabel lblTitulo, lblUserBadge, lblCuenta, lblUsuario, lblPassword;
+    private JLabel lblTitulo, lblUserBadge, lblCuenta, lblUsuario, lblPassword, lblBuscar;
     private JScrollPane scrollPane;
     private BotonEstilizado btnTema;
 
     private final AlmacenContrasenas almacenContrasenas;
 
     private final List<JComponent> componentesEstilizados = new ArrayList<>();
+    private final Set<String> cuentasConPasswordVisible = new HashSet<>();
+    private boolean almacenamientoDisponible = true;
 
     public GestorContrasenas(String usuarioLogueado, String claveMaestra) {
         this.almacenContrasenas = new AlmacenContrasenas(usuarioLogueado, claveMaestra);
@@ -156,7 +165,7 @@ public class GestorContrasenas extends JFrame {
         String[] columnas = {"Servicio / Aplicación", "Usuario / Email", "Contraseña"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) { return column == 2; }
         };
 
         tabla = new JTable(modeloTabla);
@@ -167,8 +176,27 @@ public class GestorContrasenas extends JFrame {
         tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tabla.setTransferHandler(new TableRowTransferHandler(tabla, this::guardarEnArchivo));
 
+        ordenadorTabla = new TableRowSorter<>(modeloTabla);
+        for (int columna = 0; columna < modeloTabla.getColumnCount(); columna++) {
+            ordenadorTabla.setSortable(columna, false);
+        }
+        tabla.setRowSorter(ordenadorTabla);
+
+        JPanel panelBusqueda = new JPanel(new BorderLayout(8, 0));
+        panelBusqueda.setOpaque(false);
+        lblBuscar = crearEtiqueta("🔎 Buscar servicio o correo:");
+        txtBuscar = crearCampoTexto();
+        txtBuscar.setToolTipText("Filtra por servicio/aplicación o correo electrónico");
+        panelBusqueda.add(lblBuscar, BorderLayout.WEST);
+        panelBusqueda.add(txtBuscar, BorderLayout.CENTER);
+
+        JPanel panelTabla = new JPanel(new BorderLayout(8, 8));
+        panelTabla.setOpaque(false);
+        panelTabla.add(panelBusqueda, BorderLayout.NORTH);
+
         scrollPane = new JScrollPane(tabla);
-        panelCentro.add(scrollPane, BorderLayout.CENTER);
+        panelTabla.add(scrollPane, BorderLayout.CENTER);
+        panelCentro.add(panelTabla, BorderLayout.CENTER);
 
         panelContenido.add(panelCentro, BorderLayout.CENTER);
         add(panelContenido, BorderLayout.CENTER);
@@ -182,7 +210,7 @@ public class GestorContrasenas extends JFrame {
         MenusContextuales.agregarMenuTexto(txtCuenta);
         MenusContextuales.agregarMenuTexto(txtUsuario);
         MenusContextuales.agregarMenuTexto(txtPassword);
-        MenusContextuales.agregarMenuTabla(tabla);
+        MenusContextuales.agregarMenuTabla(tabla, 2);
 
         btnTema.addActionListener(e -> alternarTema());
         btnCerrarSesion.addActionListener(e -> cerrarSesion());
@@ -191,12 +219,22 @@ public class GestorContrasenas extends JFrame {
         btnEliminar.addActionListener(e -> eliminarRegistro());
         btnLimpiar.addActionListener(e -> limpiarCampos());
 
+        txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { actualizarFiltroTabla(); }
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { actualizarFiltroTabla(); }
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { actualizarFiltroTabla(); }
+        });
+
         tabla.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON1) {
-                    int fila = tabla.getSelectedRow();
-                    if (fila != -1) {
+                    int filaVista = tabla.getSelectedRow();
+                    if (filaVista != -1) {
+                        int fila = tabla.convertRowIndexToModel(filaVista);
                         txtCuenta.setText(modeloTabla.getValueAt(fila, 0).toString());
                         txtUsuario.setText(modeloTabla.getValueAt(fila, 1).toString());
                         txtPassword.setText(modeloTabla.getValueAt(fila, 2).toString());
@@ -204,6 +242,18 @@ public class GestorContrasenas extends JFrame {
                 }
             }
         });
+    }
+
+    private void actualizarFiltroTabla() {
+        String consulta = txtBuscar.getText().trim();
+        if (consulta.isEmpty()) {
+            ordenadorTabla.setRowFilter(null);
+            tabla.setDragEnabled(true);
+        } else {
+            ordenadorTabla.setRowFilter(RowFilter.regexFilter("(?iu)" + Pattern.quote(consulta), 0, 1));
+            // El manejador de arrastre usa índices del modelo; se desactiva mientras hay filas filtradas.
+            tabla.setDragEnabled(false);
+        }
     }
 
     // --- CERRAR SESIÓN ---
@@ -253,6 +303,7 @@ public class GestorContrasenas extends JFrame {
         lblCuenta.setForeground(colorTextPrimary);
         lblUsuario.setForeground(colorTextPrimary);
         lblPassword.setForeground(colorTextPrimary);
+        lblBuscar.setForeground(colorTextPrimary);
 
         lblUserBadge.setBackground(modoOscuro ? new Color(30, 41, 59) : new Color(226, 232, 240));
         lblUserBadge.setForeground(COLOR_PRIMARY);
@@ -313,6 +364,98 @@ public class GestorContrasenas extends JFrame {
         for (int i = 0; i < tabla.getColumnCount(); i++) {
             tabla.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
+        tabla.getColumnModel().getColumn(2).setCellRenderer(new PasswordCellRenderer());
+        tabla.getColumnModel().getColumn(2).setCellEditor(new PasswordCellEditor());
+    }
+
+    private class PasswordCellRenderer extends JPanel implements javax.swing.table.TableCellRenderer {
+        private final JLabel lblPassword = new JLabel();
+        private final JButton btnVisibilidad = new JButton();
+
+        private PasswordCellRenderer() {
+            super(new BorderLayout(8, 0));
+            setOpaque(true);
+            setBorder(new EmptyBorder(0, 10, 0, 6));
+            btnVisibilidad.setFocusable(false);
+            btnVisibilidad.setBorderPainted(false);
+            btnVisibilidad.setContentAreaFilled(false);
+            btnVisibilidad.setPreferredSize(new Dimension(32, 28));
+            add(lblPassword, BorderLayout.CENTER);
+            add(btnVisibilidad, BorderLayout.EAST);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                        boolean hasFocus, int row, int column) {
+            int modelRow = table.convertRowIndexToModel(row);
+            String cuenta = modeloTabla.getValueAt(modelRow, 0).toString();
+            boolean visible = cuentasConPasswordVisible.contains(cuenta);
+            lblPassword.setText(visible ? String.valueOf(value) : "••••••••");
+            btnVisibilidad.setText(visible ? "🙈" : "👁️");
+            btnVisibilidad.setToolTipText(visible ? "Ocultar contraseña" : "Mostrar contraseña");
+
+            Color fondo = isSelected ? table.getSelectionBackground()
+                    : (row % 2 == 0 ? colorCard : (modoOscuro ? new Color(24, 34, 50) : new Color(248, 250, 252)));
+            Color texto = isSelected ? table.getSelectionForeground() : colorTextPrimary;
+            setBackground(fondo);
+            lblPassword.setForeground(texto);
+            btnVisibilidad.setForeground(texto);
+            lblPassword.setFont(table.getFont());
+            btnVisibilidad.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+            return this;
+        }
+    }
+
+    private class PasswordCellEditor extends AbstractCellEditor implements TableCellEditor {
+        private final JPanel panel = new JPanel(new BorderLayout(8, 0));
+        private final JLabel lblPassword = new JLabel();
+        private final JButton btnVisibilidad = new JButton();
+        private String passwordActual;
+        private String cuentaActual;
+
+        private PasswordCellEditor() {
+            panel.setBorder(new EmptyBorder(0, 10, 0, 6));
+            btnVisibilidad.setFocusable(false);
+            btnVisibilidad.setBorderPainted(false);
+            btnVisibilidad.setContentAreaFilled(false);
+            btnVisibilidad.setPreferredSize(new Dimension(32, 28));
+            panel.add(lblPassword, BorderLayout.CENTER);
+            panel.add(btnVisibilidad, BorderLayout.EAST);
+            btnVisibilidad.addActionListener(e -> {
+                if (!cuentasConPasswordVisible.add(cuentaActual)) {
+                    cuentasConPasswordVisible.remove(cuentaActual);
+                }
+                actualizarContenido();
+                fireEditingStopped();
+            });
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected,
+                                                      int row, int column) {
+            int modelRow = table.convertRowIndexToModel(row);
+            cuentaActual = modeloTabla.getValueAt(modelRow, 0).toString();
+            passwordActual = String.valueOf(value);
+            actualizarContenido();
+            panel.setBackground(table.getSelectionBackground());
+            lblPassword.setForeground(table.getSelectionForeground());
+            btnVisibilidad.setForeground(table.getSelectionForeground());
+            lblPassword.setFont(table.getFont());
+            btnVisibilidad.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+            return panel;
+        }
+
+        private void actualizarContenido() {
+            boolean visible = cuentasConPasswordVisible.contains(cuentaActual);
+            lblPassword.setText(visible ? passwordActual : "••••••••");
+            btnVisibilidad.setText(visible ? "🙈" : "👁️");
+            btnVisibilidad.setToolTipText(visible ? "Ocultar contraseña" : "Mostrar contraseña");
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return passwordActual;
+        }
     }
 
     // --- DATOS Y VALIDACIONES ---
@@ -326,6 +469,7 @@ public class GestorContrasenas extends JFrame {
     }
 
     private void guardarNuevoRegistro() {
+        if (!verificarAlmacenamientoDisponible()) return;
         String cuenta = txtCuenta.getText().trim();
         String usuario = txtUsuario.getText().trim();
         String password = new String(txtPassword.getPassword()).trim();
@@ -346,11 +490,13 @@ public class GestorContrasenas extends JFrame {
     }
 
     private void actualizarRegistroSeleccionado() {
-        int fila = tabla.getSelectedRow();
-        if (fila == -1) {
+        if (!verificarAlmacenamientoDisponible()) return;
+        int filaVista = tabla.getSelectedRow();
+        if (filaVista == -1) {
             mostrarMensaje("Selecciona un elemento de la lista para editar.", "Aviso", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
+        int fila = tabla.convertRowIndexToModel(filaVista);
 
         String cuenta = txtCuenta.getText().trim();
         String usuario = txtUsuario.getText().trim();
@@ -376,8 +522,10 @@ public class GestorContrasenas extends JFrame {
     }
 
     private void eliminarRegistro() {
-        int fila = tabla.getSelectedRow();
-        if (fila != -1) {
+        if (!verificarAlmacenamientoDisponible()) return;
+        int filaVista = tabla.getSelectedRow();
+        if (filaVista != -1) {
+            int fila = tabla.convertRowIndexToModel(filaVista);
             modeloTabla.removeRow(fila);
             guardarEnArchivo();
             limpiarCampos();
@@ -394,6 +542,7 @@ public class GestorContrasenas extends JFrame {
     }
 
     private void guardarEnArchivo() {
+        if (!almacenamientoDisponible) return;
         try {
             List<RegistroContrasena> registros = new ArrayList<>();
             for (int i = 0; i < modeloTabla.getRowCount(); i++) {
@@ -413,8 +562,18 @@ public class GestorContrasenas extends JFrame {
             almacenContrasenas.cargar(registro -> modeloTabla.addRow(new Object[]{
                     registro.getCuenta(), registro.getUsuario(), registro.getPassword()}));
         } catch (IOException e) {
-            mostrarMensaje("Error al cargar datos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            almacenamientoDisponible = false;
+            mostrarMensaje("No se pudo cargar la bóveda: " + e.getMessage()
+                    + "\nPor seguridad, se bloquearon las modificaciones para no sobrescribir el archivo.",
+                    "Error de bóveda", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private boolean verificarAlmacenamientoDisponible() {
+        if (almacenamientoDisponible) return true;
+        mostrarMensaje("La bóveda no se cargó correctamente. No se permiten cambios para proteger los datos existentes.",
+                "Bóveda bloqueada", JOptionPane.ERROR_MESSAGE);
+        return false;
     }
 
     // --- COMPONENTES AUXILIARES ---

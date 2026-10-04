@@ -46,13 +46,17 @@ public final class MenusContextuales {
     }
 
     public static void agregarMenuTabla(JTable tabla) {
+        agregarMenuTabla(tabla, -1);
+    }
+
+    public static void agregarMenuTabla(JTable tabla, int columnaSensible) {
         JPopupMenu menu = new JPopupMenu();
         JMenuItem itemCopiarCelda = new JMenuItem("📋 Copiar dato de la celda");
 
         itemCopiarCelda.addActionListener(e -> {
             int row = tabla.getSelectedRow();
             int col = tabla.getSelectedColumn();
-            if (row != -1 && col != -1) {
+            if (row != -1 && col != -1 && tabla.convertColumnIndexToModel(col) != columnaSensible) {
                 Object val = tabla.getValueAt(row, col);
                 if (val != null) {
                     StringSelection selection = new StringSelection(val.toString());
@@ -68,10 +72,12 @@ public final class MenusContextuales {
                 if (e.isPopupTrigger()) {
                     int r = tabla.rowAtPoint(e.getPoint());
                     int c = tabla.columnAtPoint(e.getPoint());
-                    if (r >= 0 && r < tabla.getRowCount()) {
+                    if (r >= 0 && r < tabla.getRowCount() && c >= 0 && c < tabla.getColumnCount()) {
                         tabla.setRowSelectionInterval(r, r);
                         tabla.setColumnSelectionInterval(c, c);
                     }
+                    itemCopiarCelda.setEnabled(c >= 0
+                            && tabla.convertColumnIndexToModel(c) != columnaSensible);
                     menu.show(e.getComponent(), e.getX(), e.getY());
                 }
             }

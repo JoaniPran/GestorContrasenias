@@ -25,7 +25,7 @@ public class DialogoAutenticacion extends JDialog {
     public String claveMaestra = "";
 
     public DialogoAutenticacion(boolean esRegistro) {
-        setTitle("Autenticación - KeyVault");
+        setTitle("Autenticación - Gestos de Contraseñas");
         setModal(true);
         setSize(360, 320);
         setLocationRelativeTo(null);
@@ -79,6 +79,18 @@ public class DialogoAutenticacion extends JDialog {
             String p = new String(txtP.getPassword()).trim();
             if (u.isEmpty() || p.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Completa todos los campos", "Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (!u.matches("[A-Za-z0-9_.-]{1,64}")) {
+                JOptionPane.showMessageDialog(this,
+                        "El usuario debe tener hasta 64 caracteres: letras, números, punto, guion o guion bajo.",
+                        "Usuario no válido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (p.length() < 12) {
+                JOptionPane.showMessageDialog(this,
+                        "La contraseña maestra debe tener al menos 12 caracteres.",
+                        "Contraseña débil", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             if (AlmacenUsuarios.registrarUsuario(u, p)) {

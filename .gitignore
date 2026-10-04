@@ -1,0 +1,25 @@
+# Maven y archivos compilados
+target/
+*.class
+
+# Datos locales de KeyVault (hashes y bóvedas cifradas)
+usuarios.csv
+contrasenas_*.csv
+
+# Distribución portable generada, incluye runtime y datos locales
+portable/
+
+# Metadatos locales solicitados: configuración de GitHub/modernización
+.github/
+
+# Archivos del sistema operativo y logs
+.DS_Store
+Thumbs.db
+*.log
+
+# IDEs
+.idea/
+*.iml
+.classpath
+.project
+.settings/
