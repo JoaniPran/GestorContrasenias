@@ -40,4 +40,16 @@ cd portable/KeyVault
 
 KeyVault guarda sus archivos en el directorio de trabajo. Para que los datos viajen con la distribución, copia `usuarios.csv` y `contrasenas_<usuario>.csv` dentro de `portable/KeyVault/` **antes del primer inicio**. No compartas la distribución si contiene esos archivos: son privados. La carpeta `portable/` está excluida de Git.
 
-Este procedimiento genera una aplicación portable para Linux y la arquitectura del equipo donde se ejecuta. Para Windows o macOS, genera el paquete en el sistema correspondiente.
+Este procedimiento genera una aplicación portable para Linux y la arquitectura del equipo donde se ejecuta.
+
+## Generar una distribución portable en Windows
+
+En Windows, instala Maven y un JDK 16 o posterior que incluya `jpackage`. Abre PowerShell en la carpeta del proyecto y ejecuta:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build-windows.ps1
+```
+
+El paquete se genera en `portable\KeyVault\` e incluye su propio runtime de Java. Para iniciarlo, ejecuta `portable\KeyVault\KeyVault.bat` o abre `portable\KeyVault\KeyVault.exe`. Si quieres conservar datos existentes, copia `usuarios.csv` y `contrasenas_<usuario>.csv` a `portable\KeyVault\` antes del primer inicio. No compartas esos archivos: son privados.
+
+El paquete de Windows debe generarse en Windows (y para la arquitectura de Windows de destino); `jpackage` no crea el ejecutable de Windows desde Linux. La aplicación también puede ejecutarse desde el JAR con Java instalado, usando `ejecutar-windows.bat`.
