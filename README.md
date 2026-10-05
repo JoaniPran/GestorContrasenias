@@ -31,7 +31,7 @@ jpackage \
 	--dest portable
 ```
 
-El resultado queda en `portable/KeyVault/` e incluye un runtime de Java, por lo que no hace falta instalar Java en la máquina donde se ejecuta. Para iniciarlo desde una terminal:
+Maven genera un JAR autocontenido con las bibliotecas de la aplicación, que `jpackage` incluye en la distribución. El resultado queda en `portable/KeyVault/` e incluye también un runtime de Java, por lo que no hace falta instalar Java en la máquina donde se ejecuta. Para iniciarlo desde una terminal:
 
 ```sh
 cd portable/KeyVault
@@ -50,6 +50,6 @@ En Windows, instala Maven y un JDK 16 o posterior que incluya `jpackage`. Abre P
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1
 ```
 
-El paquete se genera en `portable\KeyVault\` e incluye su propio runtime de Java. Para iniciarlo, ejecuta `portable\KeyVault\KeyVault.bat` o abre `portable\KeyVault\KeyVault.exe`. Si quieres conservar datos existentes, copia `usuarios.csv` y `contrasenas_<usuario>.csv` a `portable\KeyVault\` antes del primer inicio. No compartas esos archivos: son privados.
+El paquete se genera en `portable\KeyVault\` e incluye las bibliotecas de la aplicación y su propio runtime de Java. Para iniciarlo, ejecuta `portable\KeyVault\KeyVault.bat` o abre `portable\KeyVault\KeyVault.exe`. Si quieres conservar datos existentes, copia `usuarios.csv` y `contrasenas_<usuario>.csv` a `portable\KeyVault\` antes del primer inicio. No compartas esos archivos: son privados.
 
 El paquete de Windows debe generarse en Windows (y para la arquitectura de Windows de destino); `jpackage` no crea el ejecutable de Windows desde Linux. La aplicación también puede ejecutarse desde el JAR con Java instalado, usando `ejecutar-windows.bat`.
