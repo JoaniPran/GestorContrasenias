@@ -13,6 +13,22 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <dependencies>
+        <!-- Tema FlatLaf principal -->
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>3.5.2</version>
+        </dependency>
+        
+        <!-- FlatLaf Extras (permite usar FlatSVGIcon para renderizar iconos SVG fácilmente) -->
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-extras</artifactId>
+            <version>3.5.2</version>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>
@@ -20,6 +36,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -32,6 +49,20 @@
                     </archive>
                 </configuration>
             </plugin>
+
+            <!-- Plugin de formateo automático de código (Spotless) -->
+    <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>2.43.0</version>
+        <configuration>
+            <java>
+                <eclipse />
+                <removeUnusedImports />
+                <trimTrailingWhitespace />
+            </java>
+        </configuration>
+    </plugin>
         </plugins>
     </build>
 </project>
