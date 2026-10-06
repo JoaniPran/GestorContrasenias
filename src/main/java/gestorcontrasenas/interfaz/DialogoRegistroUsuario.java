@@ -4,7 +4,6 @@ import static gestorcontrasenas.interfaz.PaletaColores.*;
 
 import gestorcontrasenas.datos.AlmacenUsuarios;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -15,7 +14,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+import javax.swing.BorderFactory;
 import javax.swing.border.EmptyBorder;
 
 public class DialogoRegistroUsuario extends JDialog {
@@ -27,14 +28,17 @@ public class DialogoRegistroUsuario extends JDialog {
 	public DialogoRegistroUsuario(DialogoAutenticacion propietario) {
 		super(propietario, "Crear usuario", true);
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		UIManager.put("OptionPane.background", COLOR_PANEL_OSCURO);
+		UIManager.put("Panel.background", COLOR_PANEL_OSCURO);
+		UIManager.put("OptionPane.messageForeground", COLOR_TEXTO_OSCURO);
 
 		JPanel root = new JPanel(new BorderLayout(12, 12));
 		root.setBorder(new EmptyBorder(18, 18, 18, 18));
-		root.setBackground(new Color(15, 23, 42));
+		root.setBackground(COLOR_FONDO_OSCURO);
 
 		JLabel titulo = new JLabel("Crear una cuenta");
 		titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-		titulo.setForeground(Color.WHITE);
+		titulo.setForeground(COLOR_TEXTO_OSCURO);
 		root.add(titulo, BorderLayout.NORTH);
 
 		JPanel formulario = new JPanel(new GridLayout(6, 1, 6, 4));
@@ -44,7 +48,7 @@ public class DialogoRegistroUsuario extends JDialog {
 		agregarCampo(formulario, "Confirmar contraseña:", txtConfirmarContrasena);
 		root.add(formulario, BorderLayout.CENTER);
 
-		JButton btnCancelar = new BotonEstilizado("Cancelar", new Color(100, 116, 139), new Color(71, 85, 105), 8);
+		JButton btnCancelar = new BotonEstilizado("Cancelar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
 		JButton btnCrear = new BotonEstilizado("Crear usuario", COLOR_SUCCESS, COLOR_SUCCESS_HOVER, 8);
 		btnCancelar.addActionListener(e -> dispose());
 		btnCrear.addActionListener(e -> registrarUsuario());
@@ -63,8 +67,14 @@ public class DialogoRegistroUsuario extends JDialog {
 
 	private void agregarCampo(JPanel formulario, String texto, JTextField campo) {
 		JLabel etiqueta = new JLabel(texto);
-		etiqueta.setForeground(Color.LIGHT_GRAY);
+		etiqueta.setForeground(COLOR_TEXTO_SECUNDARIO_OSCURO);
 		etiqueta.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+		campo.setBackground(COLOR_CAMPO_OSCURO);
+		campo.setForeground(COLOR_TEXTO_OSCURO);
+		campo.setCaretColor(COLOR_TEXTO_OSCURO);
+		campo.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(COLOR_BORDE_OSCURO),
+				new EmptyBorder(6, 8, 6, 8)));
 		formulario.add(etiqueta);
 		formulario.add(campo);
 	}

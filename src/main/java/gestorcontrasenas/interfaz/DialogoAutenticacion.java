@@ -9,10 +9,11 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+import javax.swing.BorderFactory;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -30,25 +31,30 @@ public class DialogoAutenticacion extends JDialog {
 		setSize(360, 320);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		UIManager.put("OptionPane.background", COLOR_PANEL_OSCURO);
+		UIManager.put("Panel.background", COLOR_PANEL_OSCURO);
+		UIManager.put("OptionPane.messageForeground", COLOR_TEXTO_OSCURO);
 
 		JPanel root = new JPanel(new BorderLayout(10, 10));
 		root.setBorder(new EmptyBorder(16, 16, 16, 16));
-		root.setBackground(new Color(15, 23, 42));
+		root.setBackground(COLOR_FONDO_OSCURO);
 
 		JLabel lblTitulo = new JLabel("🛡️ Iniciar Sesión", SwingConstants.CENTER);
 		lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-		lblTitulo.setForeground(Color.WHITE);
+		lblTitulo.setForeground(COLOR_TEXTO_OSCURO);
 
 		JPanel form = new JPanel(new GridLayout(4, 1, 8, 8));
 		form.setOpaque(false);
 
 		JLabel lblU = new JLabel("Usuario:");
-		lblU.setForeground(Color.LIGHT_GRAY);
+		lblU.setForeground(COLOR_TEXTO_SECUNDARIO_OSCURO);
 		JTextField txtU = new JTextField();
+		estilizarCampo(txtU);
 
 		JLabel lblP = new JLabel("Contraseña Maestra:");
-		lblP.setForeground(Color.LIGHT_GRAY);
+		lblP.setForeground(COLOR_TEXTO_SECUNDARIO_OSCURO);
 		JPasswordField txtP = new JPasswordField();
+		estilizarCampo(txtP);
 
 		form.add(lblU);
 		form.add(txtU);
@@ -92,5 +98,14 @@ public class DialogoAutenticacion extends JDialog {
 		root.add(pBtns, BorderLayout.SOUTH);
 
 		setContentPane(root);
+	}
+
+	private void estilizarCampo(JTextField campo) {
+		campo.setBackground(COLOR_CAMPO_OSCURO);
+		campo.setForeground(COLOR_TEXTO_OSCURO);
+		campo.setCaretColor(COLOR_TEXTO_OSCURO);
+		campo.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(COLOR_BORDE_OSCURO),
+				new EmptyBorder(6, 8, 6, 8)));
 	}
 }

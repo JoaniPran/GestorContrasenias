@@ -14,6 +14,7 @@ public class BotonEstilizado extends JButton {
 	private final Color normalColor;
 	private final Color hoverColor;
 	private final int radio;
+	private boolean plano;
 
 	public BotonEstilizado(String texto, Color normal, Color hover, int radio) {
 		super(texto);
@@ -22,7 +23,7 @@ public class BotonEstilizado extends JButton {
 		this.radio = radio;
 
 		setFont(new Font("Segoe UI", Font.BOLD, 12));
-		setForeground(Color.WHITE);
+		setForeground(new Color(238, 238, 238));
 		setFocusPainted(false);
 		setBorderPainted(false);
 		setContentAreaFilled(false);
@@ -43,12 +44,19 @@ public class BotonEstilizado extends JButton {
 		});
 	}
 
+	public void setPlano(boolean plano) {
+		this.plano = plano;
+		repaint();
+	}
+
 	@Override
 	protected void paintComponent(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g.create();
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g2.setColor(getBackground());
-		g2.fillRoundRect(0, 0, getWidth(), getHeight(), radio, radio);
+		if (!plano) {
+			g2.setColor(getBackground());
+			g2.fillRoundRect(0, 0, getWidth(), getHeight(), radio, radio);
+		}
 		g2.dispose();
 		super.paintComponent(g);
 	}

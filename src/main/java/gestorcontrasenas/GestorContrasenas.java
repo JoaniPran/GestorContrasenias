@@ -107,6 +107,7 @@ public class GestorContrasenas extends JFrame {
 
 		BotonEstilizado btnCerrarSesion = new BotonEstilizado("Salir", COLOR_DANGER, COLOR_DANGER_HOVER, 8);
 		btnCerrarSesion.setIcon(new FlatSVGIcon("icons/external-link.svg", 14, 14));
+		btnCerrarSesion.setPlano(true);
 
 		JPanel panelAccionesHeader = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		panelAccionesHeader.setOpaque(false);
@@ -169,8 +170,7 @@ public class GestorContrasenas extends JFrame {
 		BotonEstilizado btnEliminar = new BotonEstilizado("Eliminar", COLOR_DANGER, COLOR_DANGER_HOVER, 8);
 		btnEliminar.setIcon(new FlatSVGIcon("icons/trash.svg", 16, 16));
 
-		BotonEstilizado btnLimpiar = new BotonEstilizado("Limpiar", new Color(100, 116, 139), new Color(71, 85, 105),
-				8);
+		BotonEstilizado btnLimpiar = new BotonEstilizado("Limpiar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
 		btnLimpiar.setIcon(new FlatSVGIcon("icons/delete.svg", 16, 16));
 
 		JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
@@ -305,19 +305,19 @@ public class GestorContrasenas extends JFrame {
 
 	private void actualizarColoresTema() {
 		if (modoOscuro) {
-			colorBg = new Color(15, 23, 42);
-			colorCard = new Color(30, 41, 59);
-			colorInput = new Color(15, 23, 42);
-			colorTextPrimary = new Color(248, 250, 252);
-			colorTextMuted = new Color(148, 163, 184);
-			colorBorder = new Color(51, 65, 85);
+			colorBg = COLOR_FONDO_OSCURO;
+			colorCard = COLOR_PANEL_OSCURO;
+			colorInput = COLOR_CAMPO_OSCURO;
+			colorTextPrimary = COLOR_TEXTO_OSCURO;
+			colorTextMuted = COLOR_TEXTO_SECUNDARIO_OSCURO;
+			colorBorder = COLOR_BORDE_OSCURO;
 		} else {
-			colorBg = new Color(248, 250, 252);
-			colorCard = new Color(255, 255, 255);
-			colorInput = new Color(241, 245, 249);
-			colorTextPrimary = new Color(15, 23, 42);
-			colorTextMuted = new Color(100, 116, 139);
-			colorBorder = new Color(226, 232, 240);
+			colorBg = new Color(190, 192, 194);
+			colorCard = new Color(250, 250, 251, 224);
+			colorInput = new Color(255, 255, 255, 224);
+			colorTextPrimary = new Color(38, 40, 43);
+			colorTextMuted = new Color(82, 85, 89);
+			colorBorder = new Color(255, 255, 255, 175);
 		}
 	}
 
@@ -339,8 +339,8 @@ public class GestorContrasenas extends JFrame {
 
 	private void mostrarConfiguracion() {
 		JDialog dialogo = new JDialog(this, "Configuración", true);
-		JPanel panel = new JPanel(new BorderLayout(10, 12));
-		panel.setBorder(new EmptyBorder(16, 18, 16, 18));
+		JPanel panel = new JPanel(new BorderLayout(12, 18));
+		panel.setBorder(new EmptyBorder(20, 22, 18, 22));
 		panel.setBackground(colorCard);
 
 		JLabel lblTema = new JLabel("Tema de la aplicación");
@@ -348,26 +348,34 @@ public class GestorContrasenas extends JFrame {
 		lblTema.setForeground(colorTextPrimary);
 		panel.add(lblTema, BorderLayout.NORTH);
 
-		JRadioButton opcionOscuro = new JRadioButton("Modo oscuro", modoOscuro);
-		JRadioButton opcionClaro = new JRadioButton("Modo claro", !modoOscuro);
-		for (JRadioButton opcion : new JRadioButton[]{opcionOscuro, opcionClaro}) {
-			opcion.setOpaque(false);
-			opcion.setForeground(colorTextPrimary);
-			opcion.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-		}
-		ButtonGroup grupoTemas = new ButtonGroup();
-		grupoTemas.add(opcionOscuro);
-		grupoTemas.add(opcionClaro);
-
-		JPanel opciones = new JPanel(new GridLayout(0, 1, 4, 4));
+		JPanel opciones = new JPanel(new BorderLayout(12, 4));
 		opciones.setOpaque(false);
-		opciones.add(opcionOscuro);
-		opciones.add(opcionClaro);
+		JLabel lblDescripcion = new JLabel("Usa el aspecto oscuro o claro");
+		lblDescripcion.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+		lblDescripcion.setForeground(colorTextMuted);
+		opciones.add(lblDescripcion, BorderLayout.NORTH);
+
+		JLabel lblModo = new JLabel(modoOscuro ? "Modo oscuro" : "Modo claro");
+		lblModo.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		lblModo.setForeground(colorTextPrimary);
+
+		InterruptorTema interruptor = new InterruptorTema(modoOscuro);
+		interruptor.setToolTipText("Cambiar entre modo oscuro y modo claro");
+		interruptor.getAccessibleContext().setAccessibleName("Cambiar tema");
+		interruptor.addActionListener(e -> lblModo.setText(interruptor.isSelected() ? "Modo oscuro" : "Modo claro"));
+
+		JPanel selector = new JPanel(new BorderLayout(10, 0));
+		selector.setOpaque(true);
+		selector.setBorder(new EmptyBorder(10, 12, 10, 12));
+		selector.setBackground(colorInput);
+		selector.add(lblModo, BorderLayout.CENTER);
+		selector.add(interruptor, BorderLayout.EAST);
+		opciones.add(selector, BorderLayout.CENTER);
 		panel.add(opciones, BorderLayout.CENTER);
 
 		BotonEstilizado btnAplicar = new BotonEstilizado("Aplicar", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);
 		btnAplicar.addActionListener(e -> {
-			if (establecerTema(opcionOscuro.isSelected())) {
+			if (establecerTema(interruptor.isSelected())) {
 				dialogo.dispose();
 			}
 		});
@@ -384,6 +392,46 @@ public class GestorContrasenas extends JFrame {
 		dialogo.setVisible(true);
 	}
 
+	private static class InterruptorTema extends JToggleButton {
+		private InterruptorTema(boolean seleccionado) {
+			setSelected(seleccionado);
+			setPreferredSize(new Dimension(52, 30));
+			setToolTipText("Cambiar tema");
+			setOpaque(false);
+			setContentAreaFilled(false);
+			setBorderPainted(false);
+			setFocusPainted(false);
+			setCursor(new Cursor(Cursor.HAND_CURSOR));
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+			int trackWidth = 46;
+			int trackHeight = 24;
+			int x = (getWidth() - trackWidth) / 2;
+			int y = (getHeight() - trackHeight) / 2;
+			Color track = isSelected() ? new Color(105, 105, 105) : new Color(92, 92, 92);
+			if (getModel().isRollover()) {
+				track = track.brighter();
+			}
+			g2.setColor(track);
+			g2.fillRoundRect(x, y, trackWidth, trackHeight, trackHeight, trackHeight);
+
+			int knobX = isSelected() ? x + trackWidth - 21 : x + 3;
+			g2.setColor(new Color(238, 238, 238));
+			g2.fillOval(knobX, y + 3, 18, 18);
+
+			if (hasFocus()) {
+				g2.setColor(COLOR_TEXTO_SECUNDARIO_OSCURO);
+				g2.drawRoundRect(x, y, trackWidth, trackHeight, trackHeight, trackHeight);
+			}
+			g2.dispose();
+		}
+	}
+
 	private void aplicarColoresInterfaz() {
 		getContentPane().setBackground(colorBg);
 
@@ -393,8 +441,8 @@ public class GestorContrasenas extends JFrame {
 		lblPassword.setForeground(colorTextPrimary);
 		lblBuscar.setForeground(colorTextPrimary);
 
-		lblUserBadge.setBackground(modoOscuro ? new Color(30, 41, 59) : new Color(226, 232, 240));
-		lblUserBadge.setForeground(COLOR_PRIMARY);
+		lblUserBadge.setOpaque(false);
+		lblUserBadge.setForeground(colorTextMuted);
 
 		panelFormulario.setColores(colorCard, colorBorder);
 
@@ -417,13 +465,13 @@ public class GestorContrasenas extends JFrame {
 		tabla.setGridColor(colorBorder);
 		tabla.setRowHeight(38);
 		tabla.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-		tabla.setSelectionBackground(modoOscuro ? new Color(49, 65, 96) : new Color(224, 231, 255));
-		tabla.setSelectionForeground(modoOscuro ? colorTextPrimary : COLOR_PRIMARY);
+		tabla.setSelectionBackground(modoOscuro ? new Color(78, 78, 78) : new Color(205, 207, 209));
+		tabla.setSelectionForeground(colorTextPrimary);
 		tabla.setShowGrid(false);
 		tabla.setIntercellSpacing(new Dimension(0, 0));
 
 		JTableHeader header = tabla.getTableHeader();
-		header.setBackground(modoOscuro ? new Color(20, 29, 47) : new Color(241, 245, 249));
+		header.setBackground(modoOscuro ? new Color(52, 52, 52) : new Color(232, 233, 234, 235));
 		header.setForeground(colorTextMuted);
 		header.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		header.setPreferredSize(new Dimension(100, 36));
@@ -440,8 +488,8 @@ public class GestorContrasenas extends JFrame {
 				setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
 						new EmptyBorder(0, 10, 0, 10)));
 				if (!isSelected) {
-					c.setBackground(
-							row % 2 == 0 ? colorCard : (modoOscuro ? new Color(24, 34, 50) : new Color(248, 250, 252)));
+					c.setBackground(row % 2 == 0 ? colorCard
+							: (modoOscuro ? new Color(67, 67, 67, 220) : new Color(232, 233, 234, 210)));
 				}
 				return c;
 			}
@@ -464,7 +512,7 @@ public class GestorContrasenas extends JFrame {
 			setBorder(new EmptyBorder(0, 10, 0, 6));
 			btnVisibilidad.setFocusable(false);
 			btnVisibilidad.setBorderPainted(false);
-			btnVisibilidad.setContentAreaFilled(false);
+			estilarBotonIcono(btnVisibilidad);
 			btnVisibilidad.setPreferredSize(new Dimension(32, 28));
 			add(lblPassword, BorderLayout.CENTER);
 			add(btnVisibilidad, BorderLayout.EAST);
@@ -503,7 +551,7 @@ public class GestorContrasenas extends JFrame {
 			panel.setBorder(new EmptyBorder(0, 10, 0, 6));
 			btnVisibilidad.setFocusable(false);
 			btnVisibilidad.setBorderPainted(false);
-			btnVisibilidad.setContentAreaFilled(false);
+			estilarBotonIcono(btnVisibilidad);
 			btnVisibilidad.setPreferredSize(new Dimension(32, 28));
 			panel.add(lblPassword, BorderLayout.CENTER);
 			panel.add(btnVisibilidad, BorderLayout.EAST);
@@ -673,6 +721,14 @@ public class GestorContrasenas extends JFrame {
 		JLabel label = new JLabel(texto);
 		label.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		return label;
+	}
+
+	private void estilarBotonIcono(JButton boton) {
+		boton.setBackground(COLOR_BOTON);
+		boton.setForeground(colorTextPrimary);
+		boton.setContentAreaFilled(true);
+		boton.setOpaque(true);
+		boton.setBorderPainted(false);
 	}
 
 	private JTextField crearCampoTexto() {
