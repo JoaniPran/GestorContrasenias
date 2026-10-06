@@ -5,6 +5,7 @@ import static gestorcontrasenas.interfaz.PaletaColores.*;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import gestorcontrasenas.datos.AlmacenContrasenas;
+import gestorcontrasenas.datos.AlmacenPreferencias;
 import gestorcontrasenas.interfaz.BotonEstilizado;
 import gestorcontrasenas.interfaz.DialogoAutenticacion;
 import gestorcontrasenas.interfaz.MenusContextuales;
@@ -50,16 +51,18 @@ public class GestorContrasenas extends JFrame {
 	private PanelRedondeado panelFormulario;
 	private JLabel lblTitulo, lblUserBadge, lblCuenta, lblUsuario, lblPassword, lblBuscar;
 	private JScrollPane scrollPane;
-	private BotonEstilizado btnTema;
 
 	private final AlmacenContrasenas almacenContrasenas;
+	private final String usuarioLogueado;
 
 	private final List<JComponent> componentesEstilizados = new ArrayList<>();
 	private final Set<String> cuentasConPasswordVisible = new HashSet<>();
 	private boolean almacenamientoDisponible = true;
 
 	public GestorContrasenas(String usuarioLogueado, String claveMaestra) {
+		this.usuarioLogueado = usuarioLogueado;
 		this.almacenContrasenas = new AlmacenContrasenas(usuarioLogueado, claveMaestra);
+		this.modoOscuro = AlmacenPreferencias.cargarModoOscuro(usuarioLogueado);
 		actualizarColoresTema();
 		construirInterfaz(usuarioLogueado);
 		aplicarColoresInterfaz();
@@ -92,8 +95,15 @@ public class GestorContrasenas extends JFrame {
 		lblUserBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		lblUserBadge.setOpaque(true);
 
-		btnTema = new BotonEstilizado("Claro", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);
-		btnTema.setIcon(new FlatSVGIcon("icons/sun.svg", 14, 14));
+		JButton btnConfiguracion = new JButton();
+		btnConfiguracion.setIcon(new FlatSVGIcon("icons/settings.svg", 16, 16));
+		btnConfiguracion.setToolTipText("Configuración");
+		btnConfiguracion.setPreferredSize(new Dimension(36, 36));
+		btnConfiguracion.setFocusable(false);
+		btnConfiguracion.setBorderPainted(false);
+		btnConfiguracion.setContentAreaFilled(false);
+		btnConfiguracion.setOpaque(false);
+		btnConfiguracion.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
 		BotonEstilizado btnCerrarSesion = new BotonEstilizado("Salir", COLOR_DANGER, COLOR_DANGER_HOVER, 8);
 		btnCerrarSesion.setIcon(new FlatSVGIcon("icons/external-link.svg", 14, 14));
@@ -101,8 +111,8 @@ public class GestorContrasenas extends JFrame {
 		JPanel panelAccionesHeader = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		panelAccionesHeader.setOpaque(false);
 		panelAccionesHeader.add(lblUserBadge);
-		panelAccionesHeader.add(btnTema);
 		panelAccionesHeader.add(btnCerrarSesion);
+		panelAccionesHeader.add(btnConfiguracion);
 
 		panelHeader.add(lblTitulo, BorderLayout.WEST);
 		panelHeader.add(panelAccionesHeader, BorderLayout.EAST);
@@ -222,17 +232,18 @@ public class GestorContrasenas extends JFrame {
 		panelContenido.add(panelCentro, BorderLayout.CENTER);
 		panelPrincipal.add(panelContenido, BorderLayout.CENTER);
 
-		configurarEventos(btnGuardar, btnActualizar, btnEliminar, btnLimpiar, btnCerrarSesion);
+		configurarEventos(btnGuardar, btnActualizar, btnEliminar, btnLimpiar, btnConfiguracion, btnCerrarSesion);
 	}
 
 	private void configurarEventos(BotonEstilizado btnGuardar, BotonEstilizado btnActualizar,
-			BotonEstilizado btnEliminar, BotonEstilizado btnLimpiar, BotonEstilizado btnCerrarSesion) {
+			BotonEstilizado btnEliminar, BotonEstilizado btnLimpiar, JButton btnConfiguracion,
+			BotonEstilizado btnCerrarSesion) {
 		MenusContextuales.agregarMenuTexto(txtCuenta);
 		MenusContextuales.agregarMenuTexto(txtUsuario);
 		MenusContextuales.agregarMenuTexto(txtPassword);
 		MenusContextuales.agregarMenuTabla(tabla, 2);
 
-		btnTema.addActionListener(e -> alternarTema());
+		btnConfiguracion.addActionListener(e -> mostrarConfiguracion());
 		btnCerrarSesion.addActionListener(e -> cerrarSesion());
 		btnGuardar.addActionListener(e -> guardarNuevoRegistro());
 		btnActualizar.addActionListener(e -> actualizarRegistroSeleccionado());
@@ -310,16 +321,67 @@ public class GestorContrasenas extends JFrame {
 		}
 	}
 
-	private void alternarTema() {
-		modoOscuro = !modoOscuro;
+	private boolean establecerTema(boolean oscuro) {
+		try {
+			AlmacenPreferencias.guardarModoOscuro(usuarioLogueado, oscuro);
+		} catch (IOException e) {
+			mostrarMensaje("No se pudo guardar la preferencia de tema: " + e.getMessage(), "Error de configuración",
+					JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+		modoOscuro = oscuro;
 		actualizarColoresTema();
-
-		btnTema.setText(modoOscuro ? "Claro" : "Oscuro");
-		btnTema.setIcon(new FlatSVGIcon(modoOscuro ? "icons/sun.svg" : "icons/moon.svg", 14, 14));
-
 		aplicarColoresInterfaz();
 		repaint();
 		revalidate();
+		return true;
+	}
+
+	private void mostrarConfiguracion() {
+		JDialog dialogo = new JDialog(this, "Configuración", true);
+		JPanel panel = new JPanel(new BorderLayout(10, 12));
+		panel.setBorder(new EmptyBorder(16, 18, 16, 18));
+		panel.setBackground(colorCard);
+
+		JLabel lblTema = new JLabel("Tema de la aplicación");
+		lblTema.setFont(new Font("Segoe UI", Font.BOLD, 13));
+		lblTema.setForeground(colorTextPrimary);
+		panel.add(lblTema, BorderLayout.NORTH);
+
+		JRadioButton opcionOscuro = new JRadioButton("Modo oscuro", modoOscuro);
+		JRadioButton opcionClaro = new JRadioButton("Modo claro", !modoOscuro);
+		for (JRadioButton opcion : new JRadioButton[]{opcionOscuro, opcionClaro}) {
+			opcion.setOpaque(false);
+			opcion.setForeground(colorTextPrimary);
+			opcion.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+		}
+		ButtonGroup grupoTemas = new ButtonGroup();
+		grupoTemas.add(opcionOscuro);
+		grupoTemas.add(opcionClaro);
+
+		JPanel opciones = new JPanel(new GridLayout(0, 1, 4, 4));
+		opciones.setOpaque(false);
+		opciones.add(opcionOscuro);
+		opciones.add(opcionClaro);
+		panel.add(opciones, BorderLayout.CENTER);
+
+		BotonEstilizado btnAplicar = new BotonEstilizado("Aplicar", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);
+		btnAplicar.addActionListener(e -> {
+			if (establecerTema(opcionOscuro.isSelected())) {
+				dialogo.dispose();
+			}
+		});
+		JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+		acciones.setOpaque(false);
+		acciones.add(btnAplicar);
+		panel.add(acciones, BorderLayout.SOUTH);
+
+		dialogo.setContentPane(panel);
+		dialogo.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		dialogo.setResizable(false);
+		dialogo.pack();
+		dialogo.setLocationRelativeTo(this);
+		dialogo.setVisible(true);
 	}
 
 	private void aplicarColoresInterfaz() {

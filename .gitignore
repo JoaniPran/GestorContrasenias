@@ -5,6 +5,7 @@ target/
 # Datos locales de KeyVault (hashes y bóvedas cifradas)
 usuarios.csv
 contrasenas_*.csv
+preferencias.properties
 
 # Distribución portable generada, incluye runtime y datos locales
 portable/
