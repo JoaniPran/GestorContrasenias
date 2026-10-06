@@ -4,9 +4,12 @@ import static gestorcontrasenas.interfaz.PaletaColores.*;
 
 import gestorcontrasenas.datos.AlmacenUsuarios;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -41,11 +44,11 @@ public class DialogoRegistroUsuario extends JDialog {
 		titulo.setForeground(COLOR_TEXTO_OSCURO);
 		root.add(titulo, BorderLayout.NORTH);
 
-		JPanel formulario = new JPanel(new GridLayout(6, 1, 6, 4));
+		JPanel formulario = new JPanel(new GridBagLayout());
 		formulario.setOpaque(false);
-		agregarCampo(formulario, "Usuario:", txtUsuario);
-		agregarCampo(formulario, "Contraseña maestra:", txtContrasena);
-		agregarCampo(formulario, "Confirmar contraseña:", txtConfirmarContrasena);
+		agregarCampo(formulario, "Usuario:", txtUsuario, 0);
+		agregarCampo(formulario, "Contraseña maestra:", txtContrasena, 1);
+		agregarCampo(formulario, "Confirmar contraseña:", txtConfirmarContrasena, 2);
 		root.add(formulario, BorderLayout.CENTER);
 
 		JButton btnCancelar = new BotonEstilizado("Cancelar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
@@ -61,22 +64,33 @@ public class DialogoRegistroUsuario extends JDialog {
 
 		setContentPane(root);
 		setSize(390, 350);
-		setResizable(false);
+		setMinimumSize(getSize());
+		setResizable(true);
 		setLocationRelativeTo(propietario);
 	}
 
-	private void agregarCampo(JPanel formulario, String texto, JTextField campo) {
+	private void agregarCampo(JPanel formulario, String texto, JTextField campo, int fila) {
 		JLabel etiqueta = new JLabel(texto);
 		etiqueta.setForeground(COLOR_TEXTO_SECUNDARIO_OSCURO);
 		etiqueta.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+		Dimension dimensionesFijas = new Dimension(320, 34);
+		campo.setPreferredSize(dimensionesFijas);
+		campo.setMinimumSize(dimensionesFijas);
+		campo.setMaximumSize(dimensionesFijas);
 		campo.setBackground(COLOR_CAMPO_OSCURO);
 		campo.setForeground(COLOR_TEXTO_OSCURO);
 		campo.setCaretColor(COLOR_TEXTO_OSCURO);
-		campo.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(COLOR_BORDE_OSCURO),
+		campo.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(COLOR_BORDE_OSCURO),
 				new EmptyBorder(6, 8, 6, 8)));
-		formulario.add(etiqueta);
-		formulario.add(campo);
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = fila * 2;
+		gbc.anchor = GridBagConstraints.WEST;
+		gbc.insets = new Insets(fila == 0 ? 0 : 8, 0, 3, 0);
+		formulario.add(etiqueta, gbc);
+		gbc.gridy++;
+		gbc.insets = new Insets(0, 0, 2, 0);
+		formulario.add(campo, gbc);
 	}
 
 	private void registrarUsuario() {

@@ -11,26 +11,49 @@ import java.util.Properties;
 public final class AlmacenPreferencias {
 	private static final Path ARCHIVO_PREFERENCIAS = Paths.get("preferencias.properties");
 	private static final String PREFIJO_TEMA = "temaOscuro.";
+	private static final String PREFIJO_CONFIRMAR_PASSWORD = "confirmarMostrarContrasena.";
 
 	private AlmacenPreferencias() {
 	}
 
 	public static synchronized boolean cargarModoOscuro(String usuario) {
+		return cargarPreferencia(claveTema(usuario), true);
+	}
+
+	public static synchronized boolean cargarConfirmacionMostrarContrasena(String usuario) {
+		return cargarPreferencia(claveConfirmacionPassword(usuario), true);
+	}
+
+	private static boolean cargarPreferencia(String clave, boolean valorPredeterminado) {
 		if (!Files.exists(ARCHIVO_PREFERENCIAS))
-			return true;
+			return valorPredeterminado;
 		try {
 			ArchivoPrivado.restringirPermisos(ARCHIVO_PREFERENCIAS);
 			Properties preferencias = new Properties();
 			try (java.io.Reader reader = Files.newBufferedReader(ARCHIVO_PREFERENCIAS, StandardCharsets.UTF_8)) {
 				preferencias.load(reader);
 			}
-			return Boolean.parseBoolean(preferencias.getProperty(claveTema(usuario), "true"));
+			return Boolean.parseBoolean(preferencias.getProperty(clave, Boolean.toString(valorPredeterminado)));
 		} catch (IOException e) {
-			return true;
+			return valorPredeterminado;
 		}
 	}
 
 	public static synchronized void guardarModoOscuro(String usuario, boolean modoOscuro) throws IOException {
+		Properties preferencias = cargarPropiedades();
+		preferencias.setProperty(claveTema(usuario), Boolean.toString(modoOscuro));
+		guardarPropiedades(preferencias);
+	}
+
+	public static synchronized void guardarPreferencias(String usuario, boolean modoOscuro,
+			boolean confirmarMostrarContrasena) throws IOException {
+		Properties preferencias = cargarPropiedades();
+		preferencias.setProperty(claveTema(usuario), Boolean.toString(modoOscuro));
+		preferencias.setProperty(claveConfirmacionPassword(usuario), Boolean.toString(confirmarMostrarContrasena));
+		guardarPropiedades(preferencias);
+	}
+
+	private static Properties cargarPropiedades() throws IOException {
 		Properties preferencias = new Properties();
 		if (Files.exists(ARCHIVO_PREFERENCIAS)) {
 			ArchivoPrivado.restringirPermisos(ARCHIVO_PREFERENCIAS);
@@ -38,12 +61,19 @@ public final class AlmacenPreferencias {
 				preferencias.load(reader);
 			}
 		}
-		preferencias.setProperty(claveTema(usuario), Boolean.toString(modoOscuro));
+		return preferencias;
+	}
+
+	private static void guardarPropiedades(Properties preferencias) throws IOException {
 		ArchivoPrivado.guardarAtomico(ARCHIVO_PREFERENCIAS,
 				writer -> preferencias.store(writer, "Preferencias locales de KeyVault"));
 	}
 
 	private static String claveTema(String usuario) {
 		return PREFIJO_TEMA + usuario.trim().toLowerCase(Locale.ROOT);
+	}
+
+	private static String claveConfirmacionPassword(String usuario) {
+		return PREFIJO_CONFIRMAR_PASSWORD + usuario.trim().toLowerCase(Locale.ROOT);
 	}
 }

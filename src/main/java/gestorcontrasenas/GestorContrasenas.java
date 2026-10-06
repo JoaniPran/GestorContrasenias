@@ -54,6 +54,7 @@ public class GestorContrasenas extends JFrame {
 
 	private final AlmacenContrasenas almacenContrasenas;
 	private final String usuarioLogueado;
+	private boolean confirmarAntesDeMostrarContrasena;
 
 	private final List<JComponent> componentesEstilizados = new ArrayList<>();
 	private final Set<String> cuentasConPasswordVisible = new HashSet<>();
@@ -63,6 +64,8 @@ public class GestorContrasenas extends JFrame {
 		this.usuarioLogueado = usuarioLogueado;
 		this.almacenContrasenas = new AlmacenContrasenas(usuarioLogueado, claveMaestra);
 		this.modoOscuro = AlmacenPreferencias.cargarModoOscuro(usuarioLogueado);
+		this.confirmarAntesDeMostrarContrasena = AlmacenPreferencias
+				.cargarConfirmacionMostrarContrasena(usuarioLogueado);
 		actualizarColoresTema();
 		construirInterfaz(usuarioLogueado);
 		aplicarColoresInterfaz();
@@ -71,7 +74,7 @@ public class GestorContrasenas extends JFrame {
 
 	private void construirInterfaz(String usuarioLogueado) {
 		// Ventana nativa controlada por el Sistema Operativo
-		setTitle("KeyVault - " + usuarioLogueado);
+		setTitle("Gestor de Contraseñas - " + usuarioLogueado);
 		setSize(780, 580);
 		setMinimumSize(new Dimension(680, 480));
 		setResizable(true);
@@ -86,7 +89,7 @@ public class GestorContrasenas extends JFrame {
 		JPanel panelHeader = new JPanel(new BorderLayout());
 		panelHeader.setOpaque(false);
 
-		lblTitulo = new JLabel("KeyVault");
+		lblTitulo = new JLabel("Gestor de Contraseñas");
 		lblTitulo.setIcon(new FlatSVGIcon("icons/shield.svg", 20, 20));
 		lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
 
@@ -240,7 +243,7 @@ public class GestorContrasenas extends JFrame {
 			BotonEstilizado btnCerrarSesion) {
 		MenusContextuales.agregarMenuTexto(txtCuenta);
 		MenusContextuales.agregarMenuTexto(txtUsuario);
-		MenusContextuales.agregarMenuTexto(txtPassword);
+		MenusContextuales.agregarMenuPassword(txtPassword);
 		MenusContextuales.agregarMenuTabla(tabla, 2);
 
 		btnConfiguracion.addActionListener(e -> mostrarConfiguracion());
@@ -312,23 +315,24 @@ public class GestorContrasenas extends JFrame {
 			colorTextMuted = COLOR_TEXTO_SECUNDARIO_OSCURO;
 			colorBorder = COLOR_BORDE_OSCURO;
 		} else {
-			colorBg = new Color(190, 192, 194);
-			colorCard = new Color(250, 250, 251, 224);
-			colorInput = new Color(255, 255, 255, 224);
+			colorBg = new Color(178, 180, 182);
+			colorCard = new Color(240, 241, 242, 224);
+			colorInput = new Color(246, 246, 247, 224);
 			colorTextPrimary = new Color(38, 40, 43);
 			colorTextMuted = new Color(82, 85, 89);
 			colorBorder = new Color(255, 255, 255, 175);
 		}
 	}
 
-	private boolean establecerTema(boolean oscuro) {
+	private boolean establecerPreferencias(boolean oscuro, boolean confirmarMostrarContrasena) {
 		try {
-			AlmacenPreferencias.guardarModoOscuro(usuarioLogueado, oscuro);
+			AlmacenPreferencias.guardarPreferencias(usuarioLogueado, oscuro, confirmarMostrarContrasena);
 		} catch (IOException e) {
-			mostrarMensaje("No se pudo guardar la preferencia de tema: " + e.getMessage(), "Error de configuración",
+			mostrarMensaje("No se pudieron guardar las preferencias: " + e.getMessage(), "Error de configuración",
 					JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
+		confirmarAntesDeMostrarContrasena = confirmarMostrarContrasena;
 		modoOscuro = oscuro;
 		actualizarColoresTema();
 		aplicarColoresInterfaz();
@@ -348,7 +352,7 @@ public class GestorContrasenas extends JFrame {
 		lblTema.setForeground(colorTextPrimary);
 		panel.add(lblTema, BorderLayout.NORTH);
 
-		JPanel opciones = new JPanel(new BorderLayout(12, 4));
+		JPanel opciones = new JPanel(new BorderLayout(12, 8));
 		opciones.setOpaque(false);
 		JLabel lblDescripcion = new JLabel("Usa el aspecto oscuro o claro");
 		lblDescripcion.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -371,11 +375,18 @@ public class GestorContrasenas extends JFrame {
 		selector.add(lblModo, BorderLayout.CENTER);
 		selector.add(interruptor, BorderLayout.EAST);
 		opciones.add(selector, BorderLayout.CENTER);
+		JCheckBox confirmarPassword = new JCheckBox("Confirmar antes de mostrar contraseñas",
+				confirmarAntesDeMostrarContrasena);
+		confirmarPassword.setOpaque(false);
+		confirmarPassword.setForeground(colorTextPrimary);
+		confirmarPassword.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+		confirmarPassword.setToolTipText("Puedes cambiar esta opción en cualquier momento desde Configuración");
+		opciones.add(confirmarPassword, BorderLayout.SOUTH);
 		panel.add(opciones, BorderLayout.CENTER);
 
 		BotonEstilizado btnAplicar = new BotonEstilizado("Aplicar", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);
 		btnAplicar.addActionListener(e -> {
-			if (establecerTema(interruptor.isSelected())) {
+			if (establecerPreferencias(interruptor.isSelected(), confirmarPassword.isSelected())) {
 				dialogo.dispose();
 			}
 		});
@@ -413,7 +424,7 @@ public class GestorContrasenas extends JFrame {
 			int trackHeight = 24;
 			int x = (getWidth() - trackWidth) / 2;
 			int y = (getHeight() - trackHeight) / 2;
-			Color track = isSelected() ? new Color(105, 105, 105) : new Color(92, 92, 92);
+			Color track = isSelected() ? new Color(88, 88, 88) : new Color(76, 76, 76);
 			if (getModel().isRollover()) {
 				track = track.brighter();
 			}
@@ -421,7 +432,7 @@ public class GestorContrasenas extends JFrame {
 			g2.fillRoundRect(x, y, trackWidth, trackHeight, trackHeight, trackHeight);
 
 			int knobX = isSelected() ? x + trackWidth - 21 : x + 3;
-			g2.setColor(new Color(238, 238, 238));
+			g2.setColor(new Color(226, 226, 226));
 			g2.fillOval(knobX, y + 3, 18, 18);
 
 			if (hasFocus()) {
@@ -465,13 +476,13 @@ public class GestorContrasenas extends JFrame {
 		tabla.setGridColor(colorBorder);
 		tabla.setRowHeight(38);
 		tabla.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-		tabla.setSelectionBackground(modoOscuro ? new Color(78, 78, 78) : new Color(205, 207, 209));
+		tabla.setSelectionBackground(modoOscuro ? new Color(66, 66, 66) : new Color(195, 197, 199));
 		tabla.setSelectionForeground(colorTextPrimary);
 		tabla.setShowGrid(false);
 		tabla.setIntercellSpacing(new Dimension(0, 0));
 
 		JTableHeader header = tabla.getTableHeader();
-		header.setBackground(modoOscuro ? new Color(52, 52, 52) : new Color(232, 233, 234, 235));
+		header.setBackground(modoOscuro ? new Color(43, 43, 43) : new Color(224, 225, 226, 235));
 		header.setForeground(colorTextMuted);
 		header.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		header.setPreferredSize(new Dimension(100, 36));
@@ -488,8 +499,9 @@ public class GestorContrasenas extends JFrame {
 				setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
 						new EmptyBorder(0, 10, 0, 10)));
 				if (!isSelected) {
-					c.setBackground(row % 2 == 0 ? colorCard
-							: (modoOscuro ? new Color(67, 67, 67, 220) : new Color(232, 233, 234, 210)));
+					c.setBackground(row % 2 == 0
+							? colorCard
+							: (modoOscuro ? new Color(54, 54, 54, 220) : new Color(224, 225, 226, 210)));
 				}
 				return c;
 			}
@@ -524,13 +536,13 @@ public class GestorContrasenas extends JFrame {
 			int modelRow = table.convertRowIndexToModel(row);
 			String cuenta = modeloTabla.getValueAt(modelRow, 0).toString();
 			boolean visible = cuentasConPasswordVisible.contains(cuenta);
-			lblPassword.setText(visible ? String.valueOf(value) : "••••••••");
+			lblPassword.setText(visible ? String.valueOf(value) : ocultarContrasena(String.valueOf(value)));
 			btnVisibilidad.setIcon(new FlatSVGIcon(visible ? "icons/eye-off.svg" : "icons/eye.svg", 16, 16));
 			btnVisibilidad.setText("");
 
 			Color fondo = isSelected
 					? table.getSelectionBackground()
-					: (row % 2 == 0 ? colorCard : (modoOscuro ? new Color(24, 34, 50) : new Color(248, 250, 252)));
+					: (row % 2 == 0 ? colorCard : (modoOscuro ? new Color(44, 44, 44) : new Color(242, 243, 244)));
 			Color texto = isSelected ? table.getSelectionForeground() : colorTextPrimary;
 			setBackground(fondo);
 			lblPassword.setForeground(texto);
@@ -556,8 +568,14 @@ public class GestorContrasenas extends JFrame {
 			panel.add(lblPassword, BorderLayout.CENTER);
 			panel.add(btnVisibilidad, BorderLayout.EAST);
 			btnVisibilidad.addActionListener(e -> {
-				if (!cuentasConPasswordVisible.add(cuentaActual)) {
+				if (cuentasConPasswordVisible.contains(cuentaActual)) {
 					cuentasConPasswordVisible.remove(cuentaActual);
+				} else {
+					if (!confirmarVisualizacionContrasena()) {
+						fireEditingCanceled();
+						return;
+					}
+					cuentasConPasswordVisible.add(cuentaActual);
 				}
 				actualizarContenido();
 				fireEditingStopped();
@@ -580,7 +598,7 @@ public class GestorContrasenas extends JFrame {
 
 		private void actualizarContenido() {
 			boolean visible = cuentasConPasswordVisible.contains(cuentaActual);
-			lblPassword.setText(visible ? passwordActual : "••••••••");
+			lblPassword.setText(visible ? passwordActual : ocultarContrasena(passwordActual));
 			btnVisibilidad.setIcon(new FlatSVGIcon(visible ? "icons/eye-off.svg" : "icons/eye.svg", 16, 16));
 			btnVisibilidad.setText("");
 		}
@@ -589,6 +607,15 @@ public class GestorContrasenas extends JFrame {
 		public Object getCellEditorValue() {
 			return passwordActual;
 		}
+	}
+
+	private String ocultarContrasena(String contrasena) {
+		int cantidadCaracteres = contrasena.codePointCount(0, contrasena.length());
+		StringBuilder mascara = new StringBuilder(cantidadCaracteres);
+		for (int i = 0; i < cantidadCaracteres; i++) {
+			mascara.append('•');
+		}
+		return mascara.toString();
 	}
 
 	private boolean existeNombreCuenta(String cuenta, int filaIgnorada) {
@@ -726,9 +753,49 @@ public class GestorContrasenas extends JFrame {
 	private void estilarBotonIcono(JButton boton) {
 		boton.setBackground(COLOR_BOTON);
 		boton.setForeground(colorTextPrimary);
-		boton.setContentAreaFilled(true);
-		boton.setOpaque(true);
+		boton.setContentAreaFilled(false);
+		boton.setOpaque(false);
 		boton.setBorderPainted(false);
+	}
+
+	private boolean confirmarVisualizacionContrasena() {
+		if (!confirmarAntesDeMostrarContrasena) {
+			return true;
+		}
+
+		JCheckBox noMostrarMas = new JCheckBox("No volver a mostrar este mensaje");
+		noMostrarMas.setOpaque(false);
+		noMostrarMas.setForeground(colorTextPrimary);
+		JPanel contenido = new JPanel(new BorderLayout(0, 12));
+		contenido.setOpaque(true);
+		contenido.setBackground(colorCard);
+		contenido.setBorder(new EmptyBorder(12, 14, 12, 14));
+		JLabel mensaje = new JLabel("¿Está seguro que quiere mostrar la contraseña?");
+		mensaje.setForeground(colorTextPrimary);
+		contenido.add(mensaje, BorderLayout.NORTH);
+		contenido.add(noMostrarMas, BorderLayout.SOUTH);
+
+		UIManager.put("OptionPane.background", colorCard);
+		UIManager.put("Panel.background", colorCard);
+		UIManager.put("OptionPane.messageForeground", colorTextPrimary);
+		Object[] opciones = {"Aceptar", "Cancelar"};
+		int respuesta = JOptionPane.showOptionDialog(this, contenido, "Mostrar contraseña", JOptionPane.DEFAULT_OPTION,
+				JOptionPane.WARNING_MESSAGE, null, opciones, opciones[0]);
+		if (respuesta != 0) {
+			return false;
+		}
+
+		if (noMostrarMas.isSelected()) {
+			try {
+				AlmacenPreferencias.guardarPreferencias(usuarioLogueado, modoOscuro, false);
+				confirmarAntesDeMostrarContrasena = false;
+			} catch (IOException e) {
+				mostrarMensaje("No se pudo guardar la preferencia: " + e.getMessage(), "Error de configuración",
+						JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private JTextField crearCampoTexto() {

@@ -14,9 +14,12 @@ import javax.swing.WindowConstants;
 import javax.swing.BorderFactory;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 
 import static gestorcontrasenas.interfaz.PaletaColores.*;
 
@@ -43,7 +46,7 @@ public class DialogoAutenticacion extends JDialog {
 		lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		lblTitulo.setForeground(COLOR_TEXTO_OSCURO);
 
-		JPanel form = new JPanel(new GridLayout(4, 1, 8, 8));
+		JPanel form = new JPanel(new GridBagLayout());
 		form.setOpaque(false);
 
 		JLabel lblU = new JLabel("Usuario:");
@@ -56,10 +59,10 @@ public class DialogoAutenticacion extends JDialog {
 		JPasswordField txtP = new JPasswordField();
 		estilizarCampo(txtP);
 
-		form.add(lblU);
-		form.add(txtU);
-		form.add(lblP);
-		form.add(txtP);
+		agregarCampo(form, lblU, 0);
+		agregarCampo(form, txtU, 1);
+		agregarCampo(form, lblP, 2);
+		agregarCampo(form, txtP, 3);
 
 		JPanel pBtns = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
 		pBtns.setOpaque(false);
@@ -98,14 +101,29 @@ public class DialogoAutenticacion extends JDialog {
 		root.add(pBtns, BorderLayout.SOUTH);
 
 		setContentPane(root);
+		setMinimumSize(getSize());
+		setResizable(true);
+		setLocationRelativeTo(null);
 	}
 
 	private void estilizarCampo(JTextField campo) {
+		Dimension dimensionesFijas = new Dimension(300, 34);
+		campo.setPreferredSize(dimensionesFijas);
+		campo.setMinimumSize(dimensionesFijas);
+		campo.setMaximumSize(dimensionesFijas);
 		campo.setBackground(COLOR_CAMPO_OSCURO);
 		campo.setForeground(COLOR_TEXTO_OSCURO);
 		campo.setCaretColor(COLOR_TEXTO_OSCURO);
-		campo.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(COLOR_BORDE_OSCURO),
+		campo.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(COLOR_BORDE_OSCURO),
 				new EmptyBorder(6, 8, 6, 8)));
+	}
+
+	private void agregarCampo(JPanel formulario, java.awt.Component componente, int fila) {
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = fila;
+		gbc.anchor = GridBagConstraints.WEST;
+		gbc.insets = new Insets(fila % 2 == 0 ? 4 : 2, 0, fila % 2 == 0 ? 2 : 8, 0);
+		formulario.add(componente, gbc);
 	}
 }
