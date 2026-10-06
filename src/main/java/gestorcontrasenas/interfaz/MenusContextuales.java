@@ -1,13 +1,9 @@
 package gestorcontrasenas.interfaz;
 
-import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
-import javax.swing.JTable;
-import javax.swing.JPasswordField;
-import javax.swing.text.JTextComponent;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.MouseAdapter;
@@ -16,8 +12,13 @@ import java.io.IOException;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
-import javax.swing.TransferHandler;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JPasswordField;
+import javax.swing.JTable;
 import javax.swing.KeyStroke;
+import javax.swing.TransferHandler;
+import javax.swing.text.JTextComponent;
 
 public final class MenusContextuales {
 	private MenusContextuales() {
@@ -25,10 +26,11 @@ public final class MenusContextuales {
 
 	public static void agregarMenuTexto(JTextComponent comp) {
 		JPopupMenu menu = new JPopupMenu();
-		JMenuItem itemCopiar = new JMenuItem("Copiar");
-		JMenuItem itemCortar = new JMenuItem("Cortar");
-		JMenuItem itemPegar = new JMenuItem("Pegar");
-		JMenuItem itemSeleccionarTodo = new JMenuItem("Seleccionar todo");
+		JMenuItem itemCopiar = new JMenuItem("Copiar", new FlatSVGIcon("icons/copy.svg", 16, 16));
+		JMenuItem itemCortar = new JMenuItem("Cortar", new FlatSVGIcon("icons/scissors.svg", 16, 16));
+		JMenuItem itemPegar = new JMenuItem("Pegar", new FlatSVGIcon("icons/clipboard.svg", 16, 16));
+		JMenuItem itemSeleccionarTodo = new JMenuItem("Seleccionar todo",
+				new FlatSVGIcon("icons/check-square.svg", 16, 16));
 
 		itemCopiar.addActionListener(e -> comp.copy());
 		itemCortar.addActionListener(e -> comp.cut());
