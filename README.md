@@ -12,6 +12,33 @@ Antes de actualizar, cierra el programa y haz una copia de seguridad de `usuario
 
 Los datos se guardan en el directorio de trabajo desde el que se ejecuta la aplicación. La protección de archivos depende también de la seguridad de la cuenta y del dispositivo donde se ejecuta KeyVault.
 
+## Usar KeyVault localmente
+
+Necesitas Java 8 o posterior. Para compilar desde el código fuente también necesitas Maven. Abre una terminal en la carpeta del proyecto y ejecuta el script correspondiente; si todavía no existe el JAR, el script lo compila automáticamente:
+
+**Linux:**
+
+```sh
+sh ./ejecutar.sh
+```
+
+**Windows (PowerShell o Símbolo del sistema):**
+
+```powershell
+./ejecutar-windows.bat
+```
+
+También puedes compilar y ejecutar el JAR manualmente en cualquier sistema con Java y Maven:
+
+```sh
+mvn package
+java -jar target/gestor-contrasenas-1.0.0.jar
+```
+
+Al iniciar, crea una cuenta con **Registrar** (usuario y contraseña maestra de al menos 12 caracteres), luego inicia sesión. Las contraseñas de tus servicios se agregan desde el formulario principal; puedes buscarlas, editarlas y eliminarlas desde allí. El icono de engranaje permite cambiar el tema claro/oscuro, que se guarda por usuario.
+
+Los archivos `usuarios.csv`, `contrasenas_<usuario>.csv` y `preferencias.properties` se crean en el directorio desde el que se ejecuta la aplicación. No los compartas; haz copias de seguridad privadas si necesitas conservar tus cuentas y bóvedas.
+
 ## Generar una distribución portable en Linux
 
 Se necesita Maven y un JDK que incluya `jpackage`. Desde la raíz del proyecto, ejecuta:
