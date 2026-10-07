@@ -40,6 +40,7 @@ public class GestorContrasenas extends JFrame {
 	private Color colorTextPrimary;
 	private Color colorTextMuted;
 	private Color colorBorder;
+	private Color colorResaltado;
 
 	private JTextField txtCuenta;
 	private JTextField txtUsuario;
@@ -64,6 +65,7 @@ public class GestorContrasenas extends JFrame {
 		this.usuarioLogueado = usuarioLogueado;
 		this.almacenContrasenas = new AlmacenContrasenas(usuarioLogueado, claveMaestra);
 		this.modoOscuro = AlmacenPreferencias.cargarModoOscuro(usuarioLogueado);
+		this.colorResaltado = AlmacenPreferencias.cargarColorResaltado(usuarioLogueado);
 		this.confirmarAntesDeMostrarContrasena = AlmacenPreferencias
 				.cargarConfirmacionMostrarContrasena(usuarioLogueado);
 		actualizarColoresTema();
@@ -307,32 +309,39 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private void actualizarColoresTema() {
+		float tono = Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(), colorResaltado.getBlue(),
+				null)[0];
 		if (modoOscuro) {
-			colorBg = COLOR_FONDO_OSCURO;
-			colorCard = COLOR_PANEL_OSCURO;
-			colorInput = COLOR_CAMPO_OSCURO;
+			colorBg = colorTono(tono, 0.42f, 0.16f);
+			colorCard = colorTono(tono, 0.32f, 0.29f);
+			colorInput = colorTono(tono, 0.26f, 0.24f);
 			colorTextPrimary = COLOR_TEXTO_OSCURO;
 			colorTextMuted = COLOR_TEXTO_SECUNDARIO_OSCURO;
-			colorBorder = COLOR_BORDE_OSCURO;
+			colorBorder = colorTono(tono, 0.28f, 0.44f);
 		} else {
-			colorBg = new Color(178, 180, 182);
-			colorCard = new Color(240, 241, 242, 224);
-			colorInput = new Color(246, 246, 247, 224);
+			colorBg = colorTono(tono, 0.24f, 0.60f);
+			colorCard = colorTono(tono, 0.18f, 0.93f);
+			colorInput = colorTono(tono, 0.14f, 0.98f);
 			colorTextPrimary = new Color(38, 40, 43);
 			colorTextMuted = new Color(82, 85, 89);
-			colorBorder = new Color(255, 255, 255, 175);
+			colorBorder = colorTono(tono, 0.16f, 0.72f);
 		}
 	}
 
-	private boolean establecerPreferencias(boolean oscuro, boolean confirmarMostrarContrasena) {
+	private Color colorTono(float tono, float saturacion, float brillo) {
+		return Color.getHSBColor(tono, saturacion, brillo);
+	}
+
+	private boolean establecerPreferencias(boolean oscuro, boolean confirmarMostrarContrasena, Color resaltado) {
 		try {
-			AlmacenPreferencias.guardarPreferencias(usuarioLogueado, oscuro, confirmarMostrarContrasena);
+			AlmacenPreferencias.guardarPreferencias(usuarioLogueado, oscuro, confirmarMostrarContrasena, resaltado);
 		} catch (IOException e) {
 			mostrarMensaje("No se pudieron guardar las preferencias: " + e.getMessage(), "Error de configuración",
 					JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		confirmarAntesDeMostrarContrasena = confirmarMostrarContrasena;
+		colorResaltado = resaltado;
 		modoOscuro = oscuro;
 		actualizarColoresTema();
 		aplicarColoresInterfaz();
@@ -352,18 +361,21 @@ public class GestorContrasenas extends JFrame {
 		lblTema.setForeground(colorTextPrimary);
 		panel.add(lblTema, BorderLayout.NORTH);
 
-		JPanel opciones = new JPanel(new BorderLayout(12, 8));
+		JPanel opciones = new JPanel();
+		opciones.setLayout(new BoxLayout(opciones, BoxLayout.Y_AXIS));
 		opciones.setOpaque(false);
 		JLabel lblDescripcion = new JLabel("Usa el aspecto oscuro o claro");
 		lblDescripcion.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 		lblDescripcion.setForeground(colorTextMuted);
-		opciones.add(lblDescripcion, BorderLayout.NORTH);
+		lblDescripcion.setAlignmentX(Component.LEFT_ALIGNMENT);
+		opciones.add(lblDescripcion);
+		opciones.add(Box.createVerticalStrut(8));
 
 		JLabel lblModo = new JLabel(modoOscuro ? "Modo oscuro" : "Modo claro");
 		lblModo.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		lblModo.setForeground(colorTextPrimary);
 
-		InterruptorTema interruptor = new InterruptorTema(modoOscuro);
+		InterruptorTema interruptor = new InterruptorTema(modoOscuro, colorResaltado);
 		interruptor.setToolTipText("Cambiar entre modo oscuro y modo claro");
 		interruptor.getAccessibleContext().setAccessibleName("Cambiar tema");
 		interruptor.addActionListener(e -> lblModo.setText(interruptor.isSelected() ? "Modo oscuro" : "Modo claro"));
@@ -374,19 +386,50 @@ public class GestorContrasenas extends JFrame {
 		selector.setBackground(colorInput);
 		selector.add(lblModo, BorderLayout.CENTER);
 		selector.add(interruptor, BorderLayout.EAST);
-		opciones.add(selector, BorderLayout.CENTER);
+		selector.setAlignmentX(Component.LEFT_ALIGNMENT);
+		opciones.add(selector);
+		opciones.add(Box.createVerticalStrut(14));
+
+		JLabel lblColorResaltado = new JLabel("Color de resaltado");
+		lblColorResaltado.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		lblColorResaltado.setForeground(colorTextPrimary);
+		lblColorResaltado.setAlignmentX(Component.LEFT_ALIGNMENT);
+		opciones.add(lblColorResaltado);
+		opciones.add(Box.createVerticalStrut(6));
+
+		Color[] colorElegido = {colorResaltado};
+		JPanel muestras = new JPanel(new FlowLayout(FlowLayout.CENTER, 7, 5));
+		muestras.setOpaque(true);
+		muestras.setBackground(colorInput);
+		muestras.setBorder(new EmptyBorder(5, 6, 5, 6));
+		ButtonGroup grupoColores = new ButtonGroup();
+		for (int i = 0; i < COLORES_RESALTADO.length; i++) {
+			Color color = COLORES_RESALTADO[i];
+			SelectorColor selectorColor = new SelectorColor(color, NOMBRES_RESALTADO[i], color.equals(colorResaltado));
+			grupoColores.add(selectorColor);
+			muestras.add(selectorColor);
+			selectorColor.addActionListener(e -> {
+				colorElegido[0] = color;
+				interruptor.setColorResaltado(color);
+			});
+		}
+		muestras.setAlignmentX(Component.LEFT_ALIGNMENT);
+		opciones.add(muestras);
+		opciones.add(Box.createVerticalStrut(10));
+
 		JCheckBox confirmarPassword = new JCheckBox("Confirmar antes de mostrar contraseñas",
 				confirmarAntesDeMostrarContrasena);
 		confirmarPassword.setOpaque(false);
 		confirmarPassword.setForeground(colorTextPrimary);
 		confirmarPassword.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 		confirmarPassword.setToolTipText("Puedes cambiar esta opción en cualquier momento desde Configuración");
-		opciones.add(confirmarPassword, BorderLayout.SOUTH);
+		confirmarPassword.setAlignmentX(Component.LEFT_ALIGNMENT);
+		opciones.add(confirmarPassword);
 		panel.add(opciones, BorderLayout.CENTER);
 
 		BotonEstilizado btnAplicar = new BotonEstilizado("Aplicar", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);
 		btnAplicar.addActionListener(e -> {
-			if (establecerPreferencias(interruptor.isSelected(), confirmarPassword.isSelected())) {
+			if (establecerPreferencias(interruptor.isSelected(), confirmarPassword.isSelected(), colorElegido[0])) {
 				dialogo.dispose();
 			}
 		});
@@ -403,11 +446,21 @@ public class GestorContrasenas extends JFrame {
 		dialogo.setVisible(true);
 	}
 
-	private static class InterruptorTema extends JToggleButton {
-		private InterruptorTema(boolean seleccionado) {
+	private static final Color[] COLORES_RESALTADO = {new Color(0, 122, 204), new Color(46, 139, 139),
+			new Color(76, 145, 0), new Color(202, 145, 0), new Color(225, 77, 35), new Color(220, 45, 67),
+			new Color(184, 65, 165), new Color(112, 91, 205), new Color(94, 119, 102), new Color(164, 129, 88)};
+	private static final String[] NOMBRES_RESALTADO = {"Azul", "Turquesa", "Verde", "Amarillo", "Naranja", "Rojo",
+			"Rosa", "Violeta", "Verde grisáceo", "Arena"};
+
+	private static class SelectorColor extends JToggleButton {
+		private final Color color;
+
+		private SelectorColor(Color color, String nombre, boolean seleccionado) {
+			this.color = color;
 			setSelected(seleccionado);
-			setPreferredSize(new Dimension(52, 30));
-			setToolTipText("Cambiar tema");
+			setPreferredSize(new Dimension(30, 30));
+			setToolTipText(nombre);
+			getAccessibleContext().setAccessibleName(nombre);
 			setOpaque(false);
 			setContentAreaFilled(false);
 			setBorderPainted(false);
@@ -419,12 +472,54 @@ public class GestorContrasenas extends JFrame {
 		protected void paintComponent(Graphics g) {
 			Graphics2D g2 = (Graphics2D) g.create();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			int diameter = 20;
+			int x = (getWidth() - diameter) / 2;
+			int y = (getHeight() - diameter) / 2;
+			if (isSelected()) {
+				g2.setColor(color);
+				g2.setStroke(new BasicStroke(2.5f));
+				g2.drawOval(x - 4, y - 4, diameter + 8, diameter + 8);
+			} else if (getModel().isRollover()) {
+				g2.setColor(color.brighter());
+				g2.setStroke(new BasicStroke(1.5f));
+				g2.drawOval(x - 2, y - 2, diameter + 4, diameter + 4);
+			}
+			g2.setColor(color);
+			g2.fillOval(x, y, diameter, diameter);
+			g2.dispose();
+		}
+	}
+
+	private static class InterruptorTema extends JToggleButton {
+		private Color colorResaltado;
+
+		private InterruptorTema(boolean seleccionado, Color colorResaltado) {
+			this.colorResaltado = colorResaltado;
+			setSelected(seleccionado);
+			setPreferredSize(new Dimension(52, 30));
+			setToolTipText("Cambiar tema");
+			setOpaque(false);
+			setContentAreaFilled(false);
+			setBorderPainted(false);
+			setFocusPainted(false);
+			setCursor(new Cursor(Cursor.HAND_CURSOR));
+		}
+
+		private void setColorResaltado(Color colorResaltado) {
+			this.colorResaltado = colorResaltado;
+			repaint();
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 			int trackWidth = 46;
 			int trackHeight = 24;
 			int x = (getWidth() - trackWidth) / 2;
 			int y = (getHeight() - trackHeight) / 2;
-			Color track = isSelected() ? new Color(88, 88, 88) : new Color(76, 76, 76);
+			Color track = isSelected() ? colorResaltado : new Color(76, 76, 76);
 			if (getModel().isRollover()) {
 				track = track.brighter();
 			}
@@ -476,13 +571,15 @@ public class GestorContrasenas extends JFrame {
 		tabla.setGridColor(colorBorder);
 		tabla.setRowHeight(38);
 		tabla.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-		tabla.setSelectionBackground(modoOscuro ? new Color(66, 66, 66) : new Color(195, 197, 199));
+		tabla.setSelectionBackground(colorSeleccionTabla());
 		tabla.setSelectionForeground(colorTextPrimary);
 		tabla.setShowGrid(false);
 		tabla.setIntercellSpacing(new Dimension(0, 0));
 
 		JTableHeader header = tabla.getTableHeader();
-		header.setBackground(modoOscuro ? new Color(43, 43, 43) : new Color(224, 225, 226, 235));
+		header.setBackground(colorTono(
+				Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(), colorResaltado.getBlue(), null)[0],
+				modoOscuro ? 0.34f : 0.16f, modoOscuro ? 0.21f : 0.84f));
 		header.setForeground(colorTextMuted);
 		header.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		header.setPreferredSize(new Dimension(100, 36));
@@ -501,7 +598,10 @@ public class GestorContrasenas extends JFrame {
 				if (!isSelected) {
 					c.setBackground(row % 2 == 0
 							? colorCard
-							: (modoOscuro ? new Color(54, 54, 54, 220) : new Color(224, 225, 226, 210)));
+							: colorTono(
+									Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(),
+											colorResaltado.getBlue(), null)[0],
+									modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
 				}
 				return c;
 			}
@@ -512,6 +612,14 @@ public class GestorContrasenas extends JFrame {
 		}
 		tabla.getColumnModel().getColumn(2).setCellRenderer(new PasswordCellRenderer());
 		tabla.getColumnModel().getColumn(2).setCellEditor(new PasswordCellEditor());
+	}
+
+	private Color colorSeleccionTabla() {
+		Color base = colorCard;
+		float intensidad = modoOscuro ? 0.38f : 0.22f;
+		return new Color(Math.round(base.getRed() * (1 - intensidad) + colorResaltado.getRed() * intensidad),
+				Math.round(base.getGreen() * (1 - intensidad) + colorResaltado.getGreen() * intensidad),
+				Math.round(base.getBlue() * (1 - intensidad) + colorResaltado.getBlue() * intensidad));
 	}
 
 	private class PasswordCellRenderer extends JPanel implements javax.swing.table.TableCellRenderer {
@@ -542,7 +650,12 @@ public class GestorContrasenas extends JFrame {
 
 			Color fondo = isSelected
 					? table.getSelectionBackground()
-					: (row % 2 == 0 ? colorCard : (modoOscuro ? new Color(44, 44, 44) : new Color(242, 243, 244)));
+					: (row % 2 == 0
+							? colorCard
+							: colorTono(
+									Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(),
+											colorResaltado.getBlue(), null)[0],
+									modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
 			Color texto = isSelected ? table.getSelectionForeground() : colorTextPrimary;
 			setBackground(fondo);
 			lblPassword.setForeground(texto);
@@ -618,12 +731,13 @@ public class GestorContrasenas extends JFrame {
 		return mascara.toString();
 	}
 
-	private boolean existeNombreCuenta(String cuenta, int filaIgnorada) {
+	private boolean existeServicioConCorreo(String cuenta, String usuario, int filaIgnorada) {
 		for (int i = 0; i < modeloTabla.getRowCount(); i++) {
 			if (i == filaIgnorada)
 				continue;
 			String cuentaExistente = modeloTabla.getValueAt(i, 0).toString().trim();
-			if (cuentaExistente.equalsIgnoreCase(cuenta))
+			String usuarioExistente = modeloTabla.getValueAt(i, 1).toString().trim();
+			if (cuentaExistente.equalsIgnoreCase(cuenta) && usuarioExistente.equalsIgnoreCase(usuario))
 				return true;
 		}
 		return false;
@@ -641,9 +755,9 @@ public class GestorContrasenas extends JFrame {
 			return;
 		}
 
-		if (existeNombreCuenta(cuenta, -1)) {
-			mostrarMensaje("Ya existe un registro con el nombre '" + cuenta + "'.", "Duplicado",
-					JOptionPane.WARNING_MESSAGE);
+		if (existeServicioConCorreo(cuenta, usuario, -1)) {
+			mostrarMensaje("Ya existe un registro para el servicio '" + cuenta + "' con ese usuario o correo.",
+					"Registro duplicado", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 
@@ -671,9 +785,9 @@ public class GestorContrasenas extends JFrame {
 			return;
 		}
 
-		if (existeNombreCuenta(cuenta, fila)) {
-			mostrarMensaje("Ya existe otro registro con el nombre '" + cuenta + "'.", "Nombre Duplicado",
-					JOptionPane.WARNING_MESSAGE);
+		if (existeServicioConCorreo(cuenta, usuario, fila)) {
+			mostrarMensaje("Ya existe otro registro para el servicio '" + cuenta + "' con ese usuario o correo.",
+					"Registro duplicado", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 
