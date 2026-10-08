@@ -9,14 +9,14 @@ public final class PaletaColores {
 	public static final Color COLOR_TEXTO_OSCURO = new Color(232, 232, 232);
 	public static final Color COLOR_TEXTO_SECUNDARIO_OSCURO = new Color(185, 185, 185);
 	public static final Color COLOR_BORDE_OSCURO = new Color(76, 76, 76);
-	public static final Color COLOR_BOTON = new Color(70, 70, 70);
-	public static final Color COLOR_BOTON_HOVER = new Color(88, 88, 88);
-	public static final Color COLOR_PRIMARY = COLOR_BOTON;
-	public static final Color COLOR_PRIMARY_HOVER = COLOR_BOTON_HOVER;
-	public static final Color COLOR_SUCCESS = COLOR_BOTON;
-	public static final Color COLOR_SUCCESS_HOVER = COLOR_BOTON_HOVER;
-	public static final Color COLOR_DANGER = COLOR_BOTON;
-	public static final Color COLOR_DANGER_HOVER = COLOR_BOTON_HOVER;
+	public static final Color COLOR_BOTON = new Color(55, 72, 94);
+	public static final Color COLOR_BOTON_HOVER = new Color(70, 91, 118);
+	public static final Color COLOR_PRIMARY = new Color(20, 112, 196);
+	public static final Color COLOR_PRIMARY_HOVER = new Color(32, 137, 224);
+	public static final Color COLOR_SUCCESS = new Color(18, 132, 82);
+	public static final Color COLOR_SUCCESS_HOVER = new Color(25, 158, 99);
+	public static final Color COLOR_DANGER = new Color(190, 48, 62);
+	public static final Color COLOR_DANGER_HOVER = new Color(218, 61, 77);
 
 	private PaletaColores() {
 	}

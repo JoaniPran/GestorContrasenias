@@ -312,19 +312,19 @@ public class GestorContrasenas extends JFrame {
 		float tono = Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(), colorResaltado.getBlue(),
 				null)[0];
 		if (modoOscuro) {
-			colorBg = colorTono(tono, 0.42f, 0.16f);
-			colorCard = colorTono(tono, 0.32f, 0.29f);
-			colorInput = colorTono(tono, 0.26f, 0.24f);
+			colorBg = colorTono(tono, 0.70f, 0.60f);
+		colorCard = colorTono(tono, 0.70f, 0.30f);
+			colorInput = colorTono(tono, 0.35f, 0.10f);
 			colorTextPrimary = COLOR_TEXTO_OSCURO;
 			colorTextMuted = COLOR_TEXTO_SECUNDARIO_OSCURO;
-			colorBorder = colorTono(tono, 0.28f, 0.44f);
+			colorBorder = colorTono(tono, 0.5f, 0.100f);
 		} else {
-			colorBg = colorTono(tono, 0.24f, 0.60f);
-			colorCard = colorTono(tono, 0.18f, 0.93f);
-			colorInput = colorTono(tono, 0.14f, 0.98f);
+			colorBg = colorTono(tono, 0.70f, 0.94f);
+			colorCard = colorTono(tono, 0.18f, 0.96f);
+			colorInput = colorTono(tono, 0.35f, 0.99f);
 			colorTextPrimary = new Color(38, 40, 43);
 			colorTextMuted = new Color(82, 85, 89);
-			colorBorder = colorTono(tono, 0.16f, 0.72f);
+			colorBorder = colorTono(tono, 0.3f, 0.64f);
 		}
 	}
 
