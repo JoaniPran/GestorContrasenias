@@ -3,17 +3,17 @@ package gestorcontrasenas.interfaz;
 import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
-import javax.swing.table.DefaultTableModel;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.util.function.BiPredicate;
 
 public class TableRowTransferHandler extends TransferHandler {
 	private final DataFlavor flavor = new DataFlavor(Integer.class, "Integer Row Index");
 	private final JTable table;
-	private final Runnable alReordenar;
+	private final BiPredicate<Integer, Integer> alReordenar;
 
-	public TableRowTransferHandler(JTable table, Runnable alReordenar) {
+	public TableRowTransferHandler(JTable table, BiPredicate<Integer, Integer> alReordenar) {
 		this.table = table;
 		this.alReordenar = alReordenar;
 	}
@@ -56,14 +56,11 @@ public class TableRowTransferHandler extends TransferHandler {
 		int targetRow = dl.getRow();
 		try {
 			int sourceRow = (Integer) info.getTransferable().getTransferData(flavor);
-			if (sourceRow != -1 && sourceRow != targetRow) {
-				int dropRow = targetRow > sourceRow ? targetRow - 1 : targetRow;
-				DefaultTableModel model = (DefaultTableModel) table.getModel();
-				model.moveRow(sourceRow, sourceRow, dropRow);
-				table.setRowSelectionInterval(dropRow, dropRow);
-				alReordenar.run();
-				return true;
+			if (sourceRow < 0 || sourceRow >= table.getRowCount() || targetRow < 0
+					|| targetRow > table.getRowCount()) {
+				return false;
 			}
+			return alReordenar.test(sourceRow, targetRow);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
