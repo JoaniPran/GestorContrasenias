@@ -22,7 +22,9 @@ Necesitas Java 8 o posterior. Para compilar desde el código fuente también nec
 sh ./ejecutar.sh
 ```
 
-**Windows (PowerShell o Símbolo del sistema):**
+**Windows (sin mostrar la consola):** haz doble clic en `ejecutar-windows.vbs`.
+
+Si necesitas ver los mensajes de compilación o diagnóstico, ejecútalo desde PowerShell o el Símbolo del sistema:
 
 ```powershell
 ./ejecutar-windows.bat
@@ -77,6 +79,6 @@ En Windows, instala Maven y un JDK 16 o posterior que incluya `jpackage`. Abre P
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1
 ```
 
-El paquete se genera en `portable\KeyVault\` e incluye las bibliotecas de la aplicación y su propio runtime de Java. Para iniciarlo, ejecuta `portable\KeyVault\KeyVault.bat` o abre `portable\KeyVault\KeyVault.exe`. Si quieres conservar datos existentes, copia `usuarios.csv` y `contrasenas_<usuario>.csv` a `portable\KeyVault\` antes del primer inicio. No compartas esos archivos: son privados.
+El paquete se genera en `portable\KeyVault\` e incluye las bibliotecas de la aplicación y su propio runtime de Java. Para iniciarlo sin mostrar una consola, abre `portable\KeyVault\KeyVault.vbs` o `KeyVault.exe`; el generador ya no crea un lanzador `.bat`. Si quieres conservar datos existentes, copia `usuarios.csv` y `contrasenas_<usuario>.csv` a `portable\KeyVault\` antes del primer inicio. No compartas esos archivos: son privados.
 
 El paquete de Windows debe generarse en Windows (y para la arquitectura de Windows de destino); `jpackage` no crea el ejecutable de Windows desde Linux. La aplicación también puede ejecutarse desde el JAR con Java instalado, usando `ejecutar-windows.bat`.

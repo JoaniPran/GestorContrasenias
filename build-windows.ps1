@@ -38,11 +38,20 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $launcher = @"
-@echo off
-setlocal
-cd /d "%~dp0"
-start "" /wait "%~dp0KeyVault.exe"
-exit /b %errorlevel%
+Option Explicit
+
+Dim shell, fileSystem, scriptDirectory, exitCode
+
+Set shell = CreateObject("WScript.Shell")
+Set fileSystem = CreateObject("Scripting.FileSystemObject")
+scriptDirectory = fileSystem.GetParentFolderName(WScript.ScriptFullName)
+shell.CurrentDirectory = scriptDirectory
+
+exitCode = shell.Run("""" & scriptDirectory & "\KeyVault.exe""", 0, True)
+If exitCode <> 0 Then
+    MsgBox "KeyVault no pudo iniciarse. Abre KeyVault.exe directamente para consultar el error.", _
+        vbExclamation, "KeyVault"
+End If
 "@
-Set-Content -Path (Join-Path $output "KeyVault.bat") -Value $launcher -Encoding ASCII
+Set-Content -Path (Join-Path $output "KeyVault.vbs") -Value $launcher -Encoding ASCII
 Write-Host "Distribución portable creada en $output"
