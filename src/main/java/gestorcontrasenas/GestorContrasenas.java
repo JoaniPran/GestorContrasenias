@@ -839,6 +839,9 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private class GroupServiceCellRenderer extends DefaultTableCellRenderer {
+		private final Icon iconoExpandido = new FlechaGrupoIcon(true);
+		private final Icon iconoContraido = new FlechaGrupoIcon(false);
+
 		@Override
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
 				int row, int column) {
@@ -847,24 +850,65 @@ public class GestorContrasenas extends JFrame {
 			String servicio = normalizarServicio(String.valueOf(value));
 			int cantidad = cantidadPorServicio.getOrDefault(servicio, 1);
 			if (esFilaCabecera(modelRow)) {
-				String flecha = serviciosExpandidos.contains(servicio) ? "▾" : "▸";
-				setText(flecha + "  " + value + " · " + cantidad + " cuentas");
+				boolean expandido = serviciosExpandidos.contains(servicio);
+				setIcon(expandido ? iconoExpandido : iconoContraido);
+				setIconTextGap(6);
+				setText(value + " · " + cantidad + " cuentas");
 				setToolTipText("Clic en la flecha para "
-						+ (serviciosExpandidos.contains(servicio) ? "contraer" : "desplegar") + " las cuentas");
+						+ (expandido ? "contraer" : "desplegar") + " las cuentas");
 			} else if (cantidad > 1) {
-				setText("↳  " + value);
+				setIcon(null);
+				setBorder(BorderFactory.createCompoundBorder(
+						BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
+						new EmptyBorder(0, 26, 0, 10)));
+				setText(String.valueOf(value));
 				setToolTipText(null);
 			} else {
+				setIcon(null);
 				setText(String.valueOf(value));
 				setToolTipText(null);
 			}
-			setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
-					new EmptyBorder(0, 10, 0, 10)));
+			if (esFilaCabecera(modelRow) || cantidad <= 1) {
+				setBorder(BorderFactory.createCompoundBorder(
+						BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
+						new EmptyBorder(0, 10, 0, 10)));
+			}
 			if (!isSelected) {
 				component.setBackground(row % 2 == 0 ? colorCard
 						: colorTonoResaltado(modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
 			}
 			return component;
+		}
+	}
+
+	private static final class FlechaGrupoIcon implements Icon {
+		private final boolean expandido;
+
+		private FlechaGrupoIcon(boolean expandido) {
+			this.expandido = expandido;
+		}
+
+		@Override
+		public int getIconWidth() {
+			return 10;
+		}
+
+		@Override
+		public int getIconHeight() {
+			return 10;
+		}
+
+		@Override
+		public void paintIcon(Component component, Graphics graphics, int x, int y) {
+			Graphics2D g2 = (Graphics2D) graphics.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setColor(component.getForeground());
+			if (expandido) {
+				g2.fillPolygon(new int[]{x + 1, x + 9, x + 5}, new int[]{y + 3, y + 3, y + 8}, 3);
+			} else {
+				g2.fillPolygon(new int[]{x + 3, x + 3, x + 8}, new int[]{y + 1, y + 9, y + 5}, 3);
+			}
+			g2.dispose();
 		}
 	}
 

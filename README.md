@@ -3,6 +3,7 @@
 ## Seguridad y migración
 
 - Las nuevas cuentas requieren una contraseña maestra de al menos 12 caracteres.
+- El nombre de usuario tiene entre 1 y 64 caracteres. Puede usar letras; @, números, puntos, guiones y guiones bajos son opcionales.
 - Las contraseñas maestras se guardan como hashes PBKDF2-HMAC-SHA256 con sal aleatoria (600.000 iteraciones).
 - La bóveda usa AES-256-GCM con nonce aleatorio, sal por bóveda y verificación de integridad.
 - Los archivos se escriben de forma atómica y, en sistemas POSIX, se restringen al propietario (`rw-------`).

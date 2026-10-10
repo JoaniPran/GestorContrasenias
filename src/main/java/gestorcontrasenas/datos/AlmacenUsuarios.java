@@ -31,10 +31,14 @@ public final class AlmacenUsuarios {
 		return false;
 	}
 
+	public static boolean esNombreUsuarioValido(String user) {
+		return user != null && user.trim().matches("[A-Za-z0-9_@.-]{1,64}");
+	}
+
 	public static boolean registrarUsuario(String user, String pass) {
 		String usuario = user.trim();
 		String contrasena = pass.trim();
-		if (!usuario.matches("[A-Za-z0-9_.-]{1,64}") || contrasena.length() < 12 || existeUsuario(usuario)) {
+		if (!esNombreUsuarioValido(usuario) || contrasena.length() < 12 || existeUsuario(usuario)) {
 			return false;
 		}
 		try {
