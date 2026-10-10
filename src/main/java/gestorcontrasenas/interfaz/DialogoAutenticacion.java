@@ -1,5 +1,6 @@
 package gestorcontrasenas.interfaz;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import gestorcontrasenas.datos.AlmacenUsuarios;
 import javax.swing.JDialog;
 import javax.swing.JButton;
@@ -42,7 +43,8 @@ public class DialogoAutenticacion extends JDialog {
 		root.setBorder(new EmptyBorder(16, 16, 16, 16));
 		root.setBackground(COLOR_FONDO_OSCURO);
 
-		JLabel lblTitulo = new JLabel("🛡️ Iniciar Sesión", SwingConstants.CENTER);
+		JLabel lblTitulo = new JLabel("Iniciar Sesión", new FlatSVGIcon("icons/shield.svg", 20, 20),
+				SwingConstants.CENTER);
 		lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		lblTitulo.setForeground(COLOR_TEXTO_OSCURO);
 
