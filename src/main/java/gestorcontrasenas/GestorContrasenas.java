@@ -63,7 +63,6 @@ public class GestorContrasenas extends JFrame {
 	private final List<JComponent> componentesEstilizados = new ArrayList<>();
 	private final Set<String> cuentasConPasswordVisible = new HashSet<>();
 	private final Set<String> serviciosExpandidos = new HashSet<>();
-	private final Map<String, Integer> primeraFilaPorServicio = new HashMap<>();
 	private final Map<String, Integer> cantidadPorServicio = new HashMap<>();
 	private boolean almacenamientoDisponible = true;
 
@@ -206,7 +205,7 @@ public class GestorContrasenas extends JFrame {
 		modeloTabla = new DefaultTableModel(columnas, 0) {
 			@Override
 			public boolean isCellEditable(int row, int column) {
-				return column == 2 && !esEncabezadoContraido(row);
+				return column == 2 && !esFilaCabecera(row) && !esEncabezadoContraido(row);
 			}
 		};
 
@@ -283,15 +282,11 @@ public class GestorContrasenas extends JFrame {
 					int filaVista = tabla.getSelectedRow();
 					if (filaVista != -1) {
 						int fila = tabla.convertRowIndexToModel(filaVista);
-						if (tabla.columnAtPoint(e.getPoint()) == 0 && e.getX() < 36) {
+						if (esFilaCabecera(fila)) {
 							String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
-							if (Integer.valueOf(fila).equals(primeraFilaPorServicio.get(servicio))
-									&& cantidadPorServicio.getOrDefault(servicio, 1) > 1) {
+							if (tabla.columnAtPoint(e.getPoint()) == 0 && e.getX() < 36) {
 								alternarGrupoServicio(servicio);
-								return;
 							}
-						}
-						if (esEncabezadoContraido(fila)) {
 							return;
 						}
 						txtCuenta.setText(modeloTabla.getValueAt(fila, 0).toString());
@@ -308,7 +303,7 @@ public class GestorContrasenas extends JFrame {
 		String consultaNormalizada = consulta.toLowerCase(Locale.ROOT);
 		Set<String> serviciosCoincidentes = new HashSet<>();
 		for (int fila = 0; fila < modeloTabla.getRowCount(); fila++) {
-			if (coincideConBusqueda(fila, consultaNormalizada)) {
+			if (!esFilaCabecera(fila) && coincideConBusqueda(fila, consultaNormalizada)) {
 				serviciosCoincidentes.add(normalizarServicio(modeloTabla.getValueAt(fila, 0).toString()));
 			}
 		}
@@ -319,19 +314,19 @@ public class GestorContrasenas extends JFrame {
 				int fila = entry.getIdentifier();
 				String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
 				boolean coincide = coincideConBusqueda(fila, consultaNormalizada);
-				boolean esCabecera = Integer.valueOf(fila).equals(primeraFilaPorServicio.get(servicio));
+				boolean esCabecera = esFilaCabecera(fila);
 				int cantidad = cantidadPorServicio.getOrDefault(servicio, 1);
 
 				if (cantidad < 2) {
-					return coincide;
+					return !esCabecera && coincide;
 				}
 				if (consultaNormalizada.isEmpty()) {
-					return serviciosExpandidos.contains(servicio) || esCabecera;
+					return esCabecera || serviciosExpandidos.contains(servicio);
 				}
 				if (!serviciosCoincidentes.contains(servicio)) {
 					return false;
 				}
-				return serviciosExpandidos.contains(servicio) ? coincide || esCabecera : esCabecera;
+				return esCabecera || (serviciosExpandidos.contains(servicio) && coincide);
 			}
 		});
 		tabla.setDragEnabled(consultaNormalizada.isEmpty());
@@ -339,7 +334,10 @@ public class GestorContrasenas extends JFrame {
 
 	private boolean coincideConBusqueda(int fila, String consulta) {
 		if (consulta.isEmpty()) {
-			return true;
+			return !esFilaCabecera(fila);
+		}
+		if (esFilaCabecera(fila)) {
+			return false;
 		}
 		String servicio = modeloTabla.getValueAt(fila, 0).toString().toLowerCase(Locale.ROOT);
 		String usuario = modeloTabla.getValueAt(fila, 1).toString().toLowerCase(Locale.ROOT);
@@ -351,10 +349,16 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private boolean esEncabezadoContraido(int fila) {
+		if (!esFilaCabecera(fila)) {
+			return false;
+		}
 		String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
-		return cantidadPorServicio.getOrDefault(servicio, 1) > 1
-				&& Integer.valueOf(fila).equals(primeraFilaPorServicio.get(servicio))
-				&& !serviciosExpandidos.contains(servicio);
+		return !serviciosExpandidos.contains(servicio);
+	}
+
+	private boolean esFilaCabecera(int fila) {
+		return fila >= 0 && fila < modeloTabla.getRowCount()
+				&& modeloTabla.getValueAt(fila, 1) == null && modeloTabla.getValueAt(fila, 2) == null;
 	}
 
 	private String claveRegistro(int fila) {
@@ -362,14 +366,15 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private void reconstruirGruposServicios() {
-		primeraFilaPorServicio.clear();
 		cantidadPorServicio.clear();
 		for (int fila = 0; fila < modeloTabla.getRowCount(); fila++) {
+			if (esFilaCabecera(fila)) {
+				continue;
+			}
 			String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
 			if (servicio.isEmpty()) {
 				continue;
 			}
-			primeraFilaPorServicio.putIfAbsent(servicio, fila);
 			cantidadPorServicio.put(servicio, cantidadPorServicio.getOrDefault(servicio, 0) + 1);
 		}
 		serviciosExpandidos.retainAll(cantidadPorServicio.keySet());
@@ -398,6 +403,9 @@ public class GestorContrasenas extends JFrame {
 
 		LinkedHashMap<String, List<Object[]>> grupos = new LinkedHashMap<>();
 		for (int fila = 0; fila < modeloTabla.getRowCount(); fila++) {
+			if (esFilaCabecera(fila)) {
+				continue;
+			}
 			String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
 			grupos.computeIfAbsent(servicio, clave -> new ArrayList<>()).add(new Object[]{
 					modeloTabla.getValueAt(fila, 0), modeloTabla.getValueAt(fila, 1), modeloTabla.getValueAt(fila, 2)});
@@ -417,7 +425,11 @@ public class GestorContrasenas extends JFrame {
 
 		modeloTabla.setRowCount(0);
 		for (String servicio : orden) {
-			for (Object[] registro : servicio.equals(servicioOrigen) ? grupoMovido : grupos.get(servicio)) {
+			List<Object[]> registrosGrupo = servicio.equals(servicioOrigen) ? grupoMovido : grupos.get(servicio);
+			if (registrosGrupo.size() > 1) {
+				modeloTabla.addRow(new Object[]{registrosGrupo.get(0)[0], null, null});
+			}
+			for (Object[] registro : registrosGrupo) {
 				modeloTabla.addRow(registro);
 			}
 		}
@@ -428,12 +440,18 @@ public class GestorContrasenas extends JFrame {
 	private void normalizarOrdenGrupos() {
 		LinkedHashMap<String, List<Object[]>> grupos = new LinkedHashMap<>();
 		for (int fila = 0; fila < modeloTabla.getRowCount(); fila++) {
+			if (esFilaCabecera(fila)) {
+				continue;
+			}
 			String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
 			grupos.computeIfAbsent(servicio, clave -> new ArrayList<>()).add(new Object[]{
 					modeloTabla.getValueAt(fila, 0), modeloTabla.getValueAt(fila, 1), modeloTabla.getValueAt(fila, 2)});
 		}
 		modeloTabla.setRowCount(0);
 		for (List<Object[]> grupo : grupos.values()) {
+			if (grupo.size() > 1) {
+				modeloTabla.addRow(new Object[]{grupo.get(0)[0], null, null});
+			}
 			for (Object[] registro : grupo) {
 				modeloTabla.addRow(registro);
 			}
@@ -774,7 +792,7 @@ public class GestorContrasenas extends JFrame {
 				int row, int column) {
 			Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			int modelRow = table.convertRowIndexToModel(row);
-			setText(esEncabezadoContraido(modelRow) ? "" : String.valueOf(value));
+			setText(esFilaCabecera(modelRow) ? "" : String.valueOf(value));
 			setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
 					new EmptyBorder(0, 10, 0, 10)));
 			if (!isSelected) {
@@ -794,14 +812,13 @@ public class GestorContrasenas extends JFrame {
 			int modelRow = table.convertRowIndexToModel(row);
 			String servicio = normalizarServicio(String.valueOf(value));
 			int cantidad = cantidadPorServicio.getOrDefault(servicio, 1);
-			boolean esCabecera = Integer.valueOf(modelRow).equals(primeraFilaPorServicio.get(servicio));
-			if (cantidad > 1 && esCabecera) {
+			if (esFilaCabecera(modelRow)) {
 				String flecha = serviciosExpandidos.contains(servicio) ? "▾" : "▸";
 				setText(flecha + "  " + value + " · " + cantidad + " cuentas");
 				setToolTipText("Clic en la flecha para "
 						+ (serviciosExpandidos.contains(servicio) ? "contraer" : "desplegar") + " las cuentas");
 			} else if (cantidad > 1) {
-				setText("    " + value);
+				setText("↳  " + value);
 				setToolTipText(null);
 			} else {
 				setText(String.valueOf(value));
@@ -846,13 +863,13 @@ public class GestorContrasenas extends JFrame {
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
 				int row, int column) {
 			int modelRow = table.convertRowIndexToModel(row);
-			String clave = claveRegistro(modelRow);
-			boolean encabezadoContraido = esEncabezadoContraido(modelRow);
-			boolean visible = !encabezadoContraido && cuentasConPasswordVisible.contains(clave);
-			lblPassword.setText(encabezadoContraido ? ""
+			boolean esCabecera = esFilaCabecera(modelRow);
+			String clave = esCabecera ? "" : claveRegistro(modelRow);
+			boolean visible = !esCabecera && cuentasConPasswordVisible.contains(clave);
+			lblPassword.setText(esCabecera ? ""
 					: (visible ? String.valueOf(value) : ocultarContrasena(String.valueOf(value))));
-			btnVisibilidad.setVisible(!encabezadoContraido);
-			btnVisibilidad.setIcon(encabezadoContraido ? null
+			btnVisibilidad.setVisible(!esCabecera);
+			btnVisibilidad.setIcon(esCabecera ? null
 					: new FlatSVGIcon(visible ? "icons/eye-off.svg" : "icons/eye.svg", 16, 16));
 			btnVisibilidad.setText("");
 
@@ -941,6 +958,9 @@ public class GestorContrasenas extends JFrame {
 
 	private boolean existeServicioConCorreo(String cuenta, String usuario, int filaIgnorada) {
 		for (int i = 0; i < modeloTabla.getRowCount(); i++) {
+			if (esFilaCabecera(i)) {
+				continue;
+			}
 			if (i == filaIgnorada)
 				continue;
 			String cuentaExistente = modeloTabla.getValueAt(i, 0).toString().trim();
@@ -983,7 +1003,7 @@ public class GestorContrasenas extends JFrame {
 			return;
 		}
 		int fila = tabla.convertRowIndexToModel(filaVista);
-		if (esEncabezadoContraido(fila)) {
+		if (esFilaCabecera(fila)) {
 			mostrarMensaje("Despliega el grupo y selecciona una cuenta para editarla.", "Grupo contraído",
 					JOptionPane.INFORMATION_MESSAGE);
 			return;
@@ -1019,7 +1039,7 @@ public class GestorContrasenas extends JFrame {
 		int filaVista = tabla.getSelectedRow();
 		if (filaVista != -1) {
 			int fila = tabla.convertRowIndexToModel(filaVista);
-			if (esEncabezadoContraido(fila)) {
+			if (esFilaCabecera(fila)) {
 				mostrarMensaje("Despliega el grupo y selecciona una cuenta para eliminarla.", "Grupo contraído",
 						JOptionPane.INFORMATION_MESSAGE);
 				return;
@@ -1048,6 +1068,9 @@ public class GestorContrasenas extends JFrame {
 		try {
 			List<RegistroContrasena> registros = new ArrayList<>();
 			for (int i = 0; i < modeloTabla.getRowCount(); i++) {
+				if (esFilaCabecera(i)) {
+					continue;
+				}
 				registros.add(new RegistroContrasena(modeloTabla.getValueAt(i, 0).toString(),
 						modeloTabla.getValueAt(i, 1).toString(), modeloTabla.getValueAt(i, 2).toString()));
 			}
