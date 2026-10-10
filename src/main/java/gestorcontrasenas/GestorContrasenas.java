@@ -54,6 +54,8 @@ public class GestorContrasenas extends JFrame {
 	private TableRowSorter<DefaultTableModel> ordenadorTabla;
 	private PanelRedondeado panelFormulario;
 	private JLabel lblTitulo, lblUserBadge, lblCuenta, lblUsuario, lblPassword, lblBuscar;
+	private JButton btnConfiguracion;
+	private BotonEstilizado btnCerrarSesion;
 	private JScrollPane scrollPane;
 
 	private final AlmacenContrasenas almacenContrasenas;
@@ -104,9 +106,10 @@ public class GestorContrasenas extends JFrame {
 		lblUserBadge.setIcon(new FlatSVGIcon("icons/user.svg", 14, 14));
 		lblUserBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		lblUserBadge.setOpaque(true);
+		lblUserBadge.setForeground(Color.WHITE);
 
-		JButton btnConfiguracion = new JButton();
-		btnConfiguracion.setIcon(new FlatSVGIcon("icons/settings.svg", 16, 16));
+		btnConfiguracion = new JButton();
+		btnConfiguracion.setIcon(crearIconoEncabezado("icons/settings.svg", 16));
 		btnConfiguracion.setToolTipText("Configuración");
 		btnConfiguracion.setPreferredSize(new Dimension(36, 36));
 		btnConfiguracion.setFocusable(false);
@@ -115,8 +118,8 @@ public class GestorContrasenas extends JFrame {
 		btnConfiguracion.setOpaque(false);
 		btnConfiguracion.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-		BotonEstilizado btnCerrarSesion = new BotonEstilizado("Salir", COLOR_DANGER, COLOR_DANGER_HOVER, 8);
-		btnCerrarSesion.setIcon(new FlatSVGIcon("icons/external-link.svg", 14, 14));
+		btnCerrarSesion = new BotonEstilizado("Salir", COLOR_DANGER, COLOR_DANGER_HOVER, 8);
+		btnCerrarSesion.setIcon(crearIconoEncabezado("icons/external-link.svg", 14));
 		btnCerrarSesion.setPlano(true);
 
 		JPanel panelAccionesHeader = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -479,23 +482,53 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private void actualizarColoresTema() {
-		float tono = Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(), colorResaltado.getBlue(),
-				null)[0];
-		if (modoOscuro) {
-			colorBg = colorTono(tono, 0.70f, 0.60f);
-		colorCard = colorTono(tono, 0.70f, 0.30f);
-			colorInput = colorTono(tono, 0.35f, 0.10f);
+		if (colorResaltado.equals(Color.BLACK) && modoOscuro) {
+			colorBg = new Color(18, 18, 18);
+			colorCard = new Color(31, 31, 31);
+			colorInput = new Color(24, 24, 24);
 			colorTextPrimary = COLOR_TEXTO_OSCURO;
 			colorTextMuted = COLOR_TEXTO_SECUNDARIO_OSCURO;
-			colorBorder = colorTono(tono, 0.5f, 0.100f);
-		} else {
-			colorBg = colorTono(tono, 0.70f, 0.94f);
-			colorCard = colorTono(tono, 0.18f, 0.96f);
-			colorInput = colorTono(tono, 0.35f, 0.99f);
+			colorBorder = new Color(62, 62, 62);
+		} else if (colorResaltado.equals(Color.BLACK)) {
+			colorBg = new Color(245, 245, 245);
+			colorCard = new Color(250, 250, 250);
+			colorInput = new Color(255, 255, 255);
 			colorTextPrimary = new Color(38, 40, 43);
 			colorTextMuted = new Color(82, 85, 89);
-			colorBorder = colorTono(tono, 0.3f, 0.64f);
+			colorBorder = new Color(170, 170, 170);
+		} else if (modoOscuro) {
+			colorBg = colorTonoResaltado(0.70f, 0.60f);
+			colorCard = colorTonoResaltado(0.70f, 0.30f);
+			colorInput = colorTonoResaltado(0.35f, 0.10f);
+			colorTextPrimary = COLOR_TEXTO_OSCURO;
+			colorTextMuted = COLOR_TEXTO_SECUNDARIO_OSCURO;
+			colorBorder = colorTonoResaltado(0.5f, 0.100f);
+		} else {
+			colorBg = colorTonoResaltado(0.70f, 0.94f);
+			colorCard = colorTonoResaltado(0.18f, 0.96f);
+			colorInput = colorTonoResaltado(0.35f, 0.99f);
+			colorTextPrimary = new Color(38, 40, 43);
+			colorTextMuted = new Color(82, 85, 89);
+			colorBorder = colorTonoResaltado(0.3f, 0.64f);
 		}
+	}
+
+	private Color colorTonoResaltado(float saturacion, float brillo) {
+		float[] hsb = Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(),
+				colorResaltado.getBlue(), null);
+		if (colorResaltado.equals(Color.BLACK)) {
+			saturacion = 0;
+			brillo = modoOscuro ? Math.min(brillo, 0.14f) : Math.max(brillo, 0.90f);
+		}
+		return colorTono(hsb[0], saturacion, brillo);
+	}
+
+	private FlatSVGIcon crearIconoEncabezado(String recurso, int tamano) {
+		Color tinta = modoOscuro ? Color.WHITE : Color.BLACK;
+		FlatSVGIcon icono = new FlatSVGIcon(recurso, tamano, tamano);
+		icono.setColorFilter(new FlatSVGIcon.ColorFilter(
+				color -> Color.WHITE.equals(color) ? tinta : color));
+		return icono;
 	}
 
 	private Color colorTono(float tono, float saturacion, float brillo) {
@@ -618,9 +651,10 @@ public class GestorContrasenas extends JFrame {
 
 	private static final Color[] COLORES_RESALTADO = {new Color(0, 122, 204), new Color(46, 139, 139),
 			new Color(76, 145, 0), new Color(202, 145, 0), new Color(225, 77, 35), new Color(220, 45, 67),
-			new Color(184, 65, 165), new Color(112, 91, 205), new Color(94, 119, 102), new Color(164, 129, 88)};
+			new Color(184, 65, 165), new Color(112, 91, 205), new Color(94, 119, 102), new Color(164, 129, 88),
+			Color.BLACK};
 	private static final String[] NOMBRES_RESALTADO = {"Azul", "Turquesa", "Verde", "Amarillo", "Naranja", "Rojo",
-			"Rosa", "Violeta", "Verde grisáceo", "Arena"};
+			"Rosa", "Violeta", "Verde grisáceo", "Arena", "Negro"};
 
 	private static class SelectorColor extends JToggleButton {
 		private final Color color;
@@ -646,7 +680,7 @@ public class GestorContrasenas extends JFrame {
 			int x = (getWidth() - diameter) / 2;
 			int y = (getHeight() - diameter) / 2;
 			if (isSelected()) {
-				g2.setColor(color);
+				g2.setColor(Color.BLACK.equals(color) ? Color.WHITE : color);
 				g2.setStroke(new BasicStroke(2.5f));
 				g2.drawOval(x - 4, y - 4, diameter + 8, diameter + 8);
 			} else if (getModel().isRollover()) {
@@ -718,7 +752,13 @@ public class GestorContrasenas extends JFrame {
 		lblBuscar.setForeground(colorTextPrimary);
 
 		lblUserBadge.setOpaque(false);
-		lblUserBadge.setForeground(colorTextMuted);
+		Color tintaEncabezado = modoOscuro ? Color.WHITE : Color.BLACK;
+		lblUserBadge.setForeground(tintaEncabezado);
+		lblUserBadge.setIcon(crearIconoEncabezado("icons/user.svg", 14));
+		btnConfiguracion.setForeground(tintaEncabezado);
+		btnConfiguracion.setIcon(crearIconoEncabezado("icons/settings.svg", 16));
+		btnCerrarSesion.setForeground(tintaEncabezado);
+		btnCerrarSesion.setIcon(crearIconoEncabezado("icons/external-link.svg", 14));
 
 		panelFormulario.setColores(colorCard, colorBorder);
 
@@ -747,9 +787,7 @@ public class GestorContrasenas extends JFrame {
 		tabla.setIntercellSpacing(new Dimension(0, 0));
 
 		JTableHeader header = tabla.getTableHeader();
-		header.setBackground(colorTono(
-				Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(), colorResaltado.getBlue(), null)[0],
-				modoOscuro ? 0.34f : 0.16f, modoOscuro ? 0.21f : 0.84f));
+		header.setBackground(colorTonoResaltado(modoOscuro ? 0.34f : 0.16f, modoOscuro ? 0.21f : 0.84f));
 		header.setForeground(colorTextMuted);
 		header.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		header.setPreferredSize(new Dimension(100, 36));
@@ -768,10 +806,7 @@ public class GestorContrasenas extends JFrame {
 				if (!isSelected) {
 					c.setBackground(row % 2 == 0
 							? colorCard
-							: colorTono(
-									Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(),
-											colorResaltado.getBlue(), null)[0],
-									modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
+							: colorTonoResaltado(modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
 				}
 				return c;
 			}
@@ -796,9 +831,8 @@ public class GestorContrasenas extends JFrame {
 			setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
 					new EmptyBorder(0, 10, 0, 10)));
 			if (!isSelected) {
-				component.setBackground(row % 2 == 0 ? colorCard : colorTono(
-						Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(), colorResaltado.getBlue(), null)[0],
-						modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
+				component.setBackground(row % 2 == 0 ? colorCard
+						: colorTonoResaltado(modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
 			}
 			return component;
 		}
@@ -827,9 +861,8 @@ public class GestorContrasenas extends JFrame {
 			setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
 					new EmptyBorder(0, 10, 0, 10)));
 			if (!isSelected) {
-				component.setBackground(row % 2 == 0 ? colorCard : colorTono(
-						Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(), colorResaltado.getBlue(), null)[0],
-						modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
+				component.setBackground(row % 2 == 0 ? colorCard
+						: colorTonoResaltado(modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
 			}
 			return component;
 		}
@@ -877,10 +910,7 @@ public class GestorContrasenas extends JFrame {
 					? table.getSelectionBackground()
 					: (row % 2 == 0
 							? colorCard
-							: colorTono(
-									Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(),
-											colorResaltado.getBlue(), null)[0],
-									modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
+							: colorTonoResaltado(modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
 			Color texto = isSelected ? table.getSelectionForeground() : colorTextPrimary;
 			setBackground(fondo);
 			lblPassword.setForeground(texto);

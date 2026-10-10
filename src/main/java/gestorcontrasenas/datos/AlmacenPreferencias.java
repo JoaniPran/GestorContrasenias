@@ -14,6 +14,7 @@ public final class AlmacenPreferencias {
 	private static final String PREFIJO_TEMA = "temaOscuro.";
 	private static final String PREFIJO_CONFIRMAR_PASSWORD = "confirmarMostrarContrasena.";
 	private static final String PREFIJO_COLOR_RESALTADO = "colorResaltado.";
+	private static final String USUARIO_RECORDADO = "usuarioRecordado";
 	private static final Color COLOR_RESALTADO_PREDETERMINADO = new Color(0, 122, 204);
 
 	private AlmacenPreferencias() {
@@ -45,6 +46,20 @@ public final class AlmacenPreferencias {
 		} catch (IOException | NumberFormatException e) {
 			return COLOR_RESALTADO_PREDETERMINADO;
 		}
+	}
+
+	public static synchronized String cargarUsuarioRecordado() throws IOException {
+		return cargarPropiedades().getProperty(USUARIO_RECORDADO, "");
+	}
+
+	public static synchronized void guardarUsuarioRecordado(String usuario) throws IOException {
+		Properties preferencias = cargarPropiedades();
+		if (usuario == null || usuario.trim().isEmpty()) {
+			preferencias.remove(USUARIO_RECORDADO);
+		} else {
+			preferencias.setProperty(USUARIO_RECORDADO, usuario.trim());
+		}
+		guardarPropiedades(preferencias);
 	}
 
 	private static boolean cargarPreferencia(String clave, boolean valorPredeterminado) {

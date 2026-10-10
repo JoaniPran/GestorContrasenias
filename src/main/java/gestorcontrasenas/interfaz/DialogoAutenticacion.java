@@ -13,6 +13,7 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.BorderFactory;
+import javax.swing.JCheckBox;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -21,8 +22,10 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.IOException;
 
 import static gestorcontrasenas.interfaz.PaletaColores.*;
+import gestorcontrasenas.datos.AlmacenPreferencias;
 
 public class DialogoAutenticacion extends JDialog {
 	public boolean exito = false;
@@ -61,10 +64,31 @@ public class DialogoAutenticacion extends JDialog {
 		JPasswordField txtP = new JPasswordField();
 		estilizarCampo(txtP);
 
+		JCheckBox recordarUsuario = new JCheckBox("Recordar usuario");
+		recordarUsuario.setOpaque(false);
+		recordarUsuario.setForeground(COLOR_TEXTO_SECUNDARIO_OSCURO);
+		recordarUsuario.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+		try {
+			String usuarioRecordado = AlmacenPreferencias.cargarUsuarioRecordado();
+			if (!usuarioRecordado.isEmpty()) {
+				txtU.setText(usuarioRecordado);
+				recordarUsuario.setSelected(true);
+			}
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(this, "No se pudo cargar el usuario recordado: " + e.getMessage(),
+					"Advertencia", JOptionPane.WARNING_MESSAGE);
+		}
+
 		agregarCampo(form, lblU, 0);
 		agregarCampo(form, txtU, 1);
 		agregarCampo(form, lblP, 2);
 		agregarCampo(form, txtP, 3);
+		GridBagConstraints gbcRecordar = new GridBagConstraints();
+		gbcRecordar.gridx = 0;
+		gbcRecordar.gridy = 4;
+		gbcRecordar.anchor = GridBagConstraints.WEST;
+		gbcRecordar.insets = new Insets(2, 0, 8, 0);
+		form.add(recordarUsuario, gbcRecordar);
 
 		JPanel pBtns = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
 		pBtns.setOpaque(false);
@@ -76,6 +100,12 @@ public class DialogoAutenticacion extends JDialog {
 			String u = txtU.getText().trim();
 			String p = new String(txtP.getPassword()).trim();
 			if (AlmacenUsuarios.validarCredenciales(u, p)) {
+				try {
+					AlmacenPreferencias.guardarUsuarioRecordado(recordarUsuario.isSelected() ? u : "");
+				} catch (IOException ex) {
+					JOptionPane.showMessageDialog(this, "No se pudo guardar la preferencia de usuario: "
+							+ ex.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
+				}
 				usuarioAutenticado = u;
 				claveMaestra = p;
 				exito = true;

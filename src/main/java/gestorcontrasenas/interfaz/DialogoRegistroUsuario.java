@@ -102,11 +102,6 @@ public class DialogoRegistroUsuario extends JDialog {
 			mostrarError("Completa todos los campos.", "Campos incompletos");
 			return;
 		}
-		if (!usuario.matches("[A-Za-z0-9_.-]{1,64}")) {
-			mostrarError("El usuario debe tener hasta 64 caracteres: letras, números, punto, guion o guion bajo.",
-					"Usuario no válido");
-			return;
-		}
 		if (AlmacenUsuarios.existeUsuario(usuario)) {
 			mostrarError("Ya existe un usuario con ese nombre.", "Usuario duplicado");
 			return;

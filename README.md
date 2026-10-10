@@ -37,7 +37,7 @@ mvn package
 java -jar target/gestor-contrasenas-1.0.0.jar
 ```
 
-Al iniciar, crea una cuenta con **Registrar** (usuario y contraseña maestra de al menos 12 caracteres), luego inicia sesión. Las contraseñas de tus servicios se agregan desde el formulario principal; puedes buscarlas, editarlas y eliminarlas desde allí. El icono de engranaje permite cambiar el tema claro/oscuro, que se guarda por usuario.
+Al iniciar, crea una cuenta con **Registrar** (usuario y contraseña maestra de al menos 12 caracteres), luego inicia sesión. Puedes marcar **Recordar usuario** para completar el nombre de usuario en próximos inicios; la contraseña maestra nunca se recuerda. Las contraseñas de tus servicios se agregan desde el formulario principal; puedes buscarlas, editarlas y eliminarlas desde allí. El icono de engranaje permite cambiar el tema claro/oscuro, que se guarda por usuario.
 
 Los archivos `usuarios.csv`, `contrasenas_<usuario>.csv` y `preferencias.properties` se crean en el directorio desde el que se ejecuta la aplicación. No los compartas; haz copias de seguridad privadas si necesitas conservar tus cuentas y bóvedas.
 
