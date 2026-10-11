@@ -108,6 +108,12 @@ public class GestorContrasenas extends JFrame {
 		lblUserBadge.setOpaque(true);
 		lblUserBadge.setForeground(Color.WHITE);
 
+		JPanel panelBusqueda = new JPanel(new BorderLayout(8, 0));
+		panelBusqueda.setOpaque(false);
+		lblBuscar = crearEtiqueta("Buscar servicio o correo:");
+		lblBuscar.setIcon(new FlatSVGIcon("icons/search.svg", 14, 14));
+		lblBuscar.setForeground(Color.WHITE);
+	
 		btnConfiguracion = new JButton();
 		btnConfiguracion.setIcon(crearIconoEncabezado("icons/settings.svg", 16));
 		btnConfiguracion.setToolTipText("Configuración");
@@ -118,9 +124,10 @@ public class GestorContrasenas extends JFrame {
 		btnConfiguracion.setOpaque(false);
 		btnConfiguracion.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-		btnCerrarSesion = new BotonEstilizado("Salir", COLOR_DANGER, COLOR_DANGER_HOVER, 8);
+		btnCerrarSesion = new BotonEstilizado("Salir", COLOR_BOTON, COLOR_BOTON_HOVER, 12);
 		btnCerrarSesion.setIcon(crearIconoEncabezado("icons/external-link.svg", 14));
-		btnCerrarSesion.setPlano(true);
+		btnCerrarSesion.setFocusable(true);
+
 
 		JPanel panelAccionesHeader = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		panelAccionesHeader.setOpaque(false);
@@ -174,13 +181,13 @@ public class GestorContrasenas extends JFrame {
 		panelFormulario.add(txtPassword, gbc);
 
 		// --- BOTONES FORMULARIO ---
-		BotonEstilizado btnGuardar = new BotonEstilizado("Guardar", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);
+		BotonEstilizado btnGuardar = new BotonEstilizado("Guardar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
 		btnGuardar.setIcon(new FlatSVGIcon("icons/save.svg", 16, 16));
 
-		BotonEstilizado btnActualizar = new BotonEstilizado("Editar", COLOR_SUCCESS, COLOR_SUCCESS_HOVER, 8);
+		BotonEstilizado btnActualizar = new BotonEstilizado("Editar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
 		btnActualizar.setIcon(new FlatSVGIcon("icons/edit.svg", 16, 16));
 
-		BotonEstilizado btnEliminar = new BotonEstilizado("Eliminar", COLOR_DANGER, COLOR_DANGER_HOVER, 8);
+		BotonEstilizado btnEliminar = new BotonEstilizado("Eliminar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
 		btnEliminar.setIcon(new FlatSVGIcon("icons/trash.svg", 16, 16));
 
 		BotonEstilizado btnLimpiar = new BotonEstilizado("Limpiar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
@@ -223,11 +230,6 @@ public class GestorContrasenas extends JFrame {
 			ordenadorTabla.setSortable(columna, false);
 		}
 		tabla.setRowSorter(ordenadorTabla);
-
-		JPanel panelBusqueda = new JPanel(new BorderLayout(8, 0));
-		panelBusqueda.setOpaque(false);
-		lblBuscar = crearEtiqueta("Buscar servicio o correo:");
-		lblBuscar.setIcon(new FlatSVGIcon("icons/search.svg", 14, 14));
 
 		txtBuscar = crearCampoTexto();
 		txtBuscar.setToolTipText("Filtra por servicio/aplicación o correo electrónico");
@@ -757,8 +759,8 @@ public class GestorContrasenas extends JFrame {
 		lblUserBadge.setIcon(crearIconoEncabezado("icons/user.svg", 14));
 		btnConfiguracion.setForeground(tintaEncabezado);
 		btnConfiguracion.setIcon(crearIconoEncabezado("icons/settings.svg", 16));
-		btnCerrarSesion.setForeground(tintaEncabezado);
-		btnCerrarSesion.setIcon(crearIconoEncabezado("icons/external-link.svg", 14));
+		lblBuscar.setForeground(tintaEncabezado);
+		lblBuscar.setIcon(crearIconoEncabezado("icons/search.svg", 14));
 
 		panelFormulario.setColores(colorCard, colorBorder);
 

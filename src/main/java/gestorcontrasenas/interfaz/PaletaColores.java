@@ -9,8 +9,8 @@ public final class PaletaColores {
 	public static final Color COLOR_TEXTO_OSCURO = new Color(232, 232, 232);
 	public static final Color COLOR_TEXTO_SECUNDARIO_OSCURO = new Color(185, 185, 185);
 	public static final Color COLOR_BORDE_OSCURO = new Color(76, 76, 76);
-	public static final Color COLOR_BOTON = new Color(55, 72, 94);
-	public static final Color COLOR_BOTON_HOVER = new Color(70, 91, 118);
+	public static final Color COLOR_BOTON = new Color(64, 64, 64);
+	public static final Color COLOR_BOTON_HOVER = new Color(140, 140, 140);
 	public static final Color COLOR_PRIMARY = new Color(20, 112, 196);
 	public static final Color COLOR_PRIMARY_HOVER = new Color(32, 137, 224);
 	public static final Color COLOR_SUCCESS = new Color(18, 132, 82);
