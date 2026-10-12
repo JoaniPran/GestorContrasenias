@@ -10,6 +10,8 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractButton;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
@@ -25,6 +27,7 @@ import javax.swing.TransferHandler;
 import javax.swing.text.JTextComponent;
 
 public final class MenusContextuales {
+	private static final Logger LOGGER = Logger.getLogger(MenusContextuales.class.getName());
 	private static final String ICONO_COPIA_ORIGINAL = "iconoCopiaOriginal";
 	private static final String TEMPORIZADOR_COPIA = "temporizadorCopia";
 	private static final Object BLOQUEO_PORTAPAPELES = new Object();
@@ -264,7 +267,8 @@ public final class MenusContextuales {
 
 	private static void limpiarPortapapelesSiCoincide(Clipboard portapapeles, StringSelection seleccion) {
 		synchronized (BLOQUEO_PORTAPAPELES) {
-			if (portapapeles.getContents(null) == seleccion) {
+			Transferable contenido = portapapeles.getContents(null);
+			if (contenido == seleccion || contieneLaMismaContrasena(contenido, seleccion)) {
 				portapapeles.setContents(new StringSelection(""), null);
 			}
 			if (portapapelesContrasenaPendiente == portapapeles
@@ -272,6 +276,19 @@ public final class MenusContextuales {
 				portapapelesContrasenaPendiente = null;
 				seleccionContrasenaPendiente = null;
 			}
+		}
+	}
+
+	private static boolean contieneLaMismaContrasena(Transferable contenido, StringSelection seleccion) {
+		if (contenido == null || !contenido.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+			return false;
+		}
+		try {
+			return seleccion.getTransferData(DataFlavor.stringFlavor)
+					.equals(contenido.getTransferData(DataFlavor.stringFlavor));
+		} catch (UnsupportedFlavorException | IOException e) {
+			LOGGER.log(Level.WARNING, "No se pudo verificar el contenido del portapapeles.", e);
+			return false;
 		}
 	}
 
