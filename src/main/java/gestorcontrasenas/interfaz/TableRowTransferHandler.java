@@ -20,6 +20,9 @@ public class TableRowTransferHandler extends TransferHandler {
 
 	@Override
 	protected Transferable createTransferable(JComponent c) {
+		if (table.getSelectedRowCount() != 1) {
+			return null;
+		}
 		return new Transferable() {
 			@Override
 			public DataFlavor[] getTransferDataFlavors() {
@@ -40,7 +43,7 @@ public class TableRowTransferHandler extends TransferHandler {
 
 	@Override
 	public int getSourceActions(JComponent c) {
-		return MOVE;
+		return table.getSelectedRowCount() == 1 ? MOVE : NONE;
 	}
 
 	@Override

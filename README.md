@@ -6,7 +6,9 @@
 - El nombre de usuario tiene entre 1 y 64 caracteres. Puede usar letras; @, números, puntos, guiones y guiones bajos son opcionales.
 - Las contraseñas maestras se guardan como hashes PBKDF2-HMAC-SHA256 con sal aleatoria (600.000 iteraciones).
 - La bóveda usa AES-256-GCM con nonce aleatorio, sal por bóveda y verificación de integridad.
+- Las contraseñas copiadas se borran del portapapeles del sistema después de 30 segundos o al cerrar la aplicación/sesión, solo si el contenido copiado por KeyVault no fue reemplazado antes.
 - Los archivos se escriben de forma atómica y, en sistemas POSIX, se restringen al propietario (`rw-------`).
+- En Windows se excluye la ventana principal de las capturas compatibles; si no se puede activar esa protección, las contraseñas permanecen ocultas. En Linux, las contraseñas reveladas se vuelven a ocultar al perder el foco. Estas medidas dependen del sistema y no impiden todos los métodos de captura.
 - En el siguiente inicio de sesión, las cuentas y bóvedas del formato anterior se migran automáticamente. La migración conserva el formato original si falla antes de completarse.
 
 Antes de actualizar, cierra el programa y haz una copia de seguridad de `usuarios.csv` y de cada archivo `contrasenas_<usuario>.csv`. No borres esos archivos: contienen las cuentas y bóvedas.
@@ -38,7 +40,7 @@ mvn package
 java -jar target/gestor-contrasenas-1.0.0.jar
 ```
 
-Al iniciar, crea una cuenta con **Registrar** (usuario y contraseña maestra de al menos 12 caracteres), luego inicia sesión. Puedes marcar **Recordar usuario** para completar el nombre de usuario en próximos inicios; la contraseña maestra nunca se recuerda. Las contraseñas de tus servicios se agregan desde el formulario principal; puedes buscarlas, editarlas y eliminarlas desde allí. El icono de engranaje permite cambiar el tema claro/oscuro, que se guarda por usuario.
+Al iniciar, crea una cuenta con **Registrar** (usuario y contraseña maestra de al menos 12 caracteres), luego inicia sesión. Puedes marcar **Recordar usuario** para completar el nombre de usuario en próximos inicios; la contraseña maestra nunca se recuerda. Las contraseñas de tus servicios se agregan desde el formulario principal; puedes buscarlas, editarlas y eliminarlas desde allí. El botón **Importar Google** permite seleccionar o arrastrar un CSV de Google Password Manager; valida las columnas `name`, `url`, `username`, `password` y `note`, importa nombre, usuario y contraseña, y reemplaza la contraseña cuando ya existe el mismo servicio y usuario. El icono de engranaje permite cambiar el tema claro/oscuro, que se guarda por usuario.
 
 Los archivos `usuarios.csv`, `contrasenas_<usuario>.csv` y `preferencias.properties` se crean en el directorio desde el que se ejecuta la aplicación. No los compartas; haz copias de seguridad privadas si necesitas conservar tus cuentas y bóvedas.
 

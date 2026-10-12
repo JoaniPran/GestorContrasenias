@@ -1,6 +1,7 @@
 package gestorcontrasenas.interfaz;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import java.awt.datatransfer.Clipboard;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
@@ -9,18 +10,27 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import javax.swing.AbstractButton;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
+import javax.swing.Icon;
 import javax.swing.InputMap;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JPasswordField;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
+import javax.swing.Timer;
 import javax.swing.TransferHandler;
 import javax.swing.text.JTextComponent;
 
 public final class MenusContextuales {
+	private static final String ICONO_COPIA_ORIGINAL = "iconoCopiaOriginal";
+	private static final String TEMPORIZADOR_COPIA = "temporizadorCopia";
+	private static final Object BLOQUEO_PORTAPAPELES = new Object();
+	private static Clipboard portapapelesContrasenaPendiente;
+	private static StringSelection seleccionContrasenaPendiente;
+
 	private MenusContextuales() {
 	}
 
@@ -115,8 +125,13 @@ public final class MenusContextuales {
 		JPopupMenu menu = new JPopupMenu();
 		JMenuItem itemPegar = new JMenuItem("📌 Pegar");
 		JMenuItem itemSeleccionarTodo = new JMenuItem("🔍 Seleccionar todo");
+		JMenuItem itemCopiar = new JMenuItem("Copiar contraseña", new FlatSVGIcon("icons/copy.svg", 16, 16));
+		itemCopiar.addActionListener(e -> copiarContrasenaAlPortapapeles(
+				new String(campo.getPassword()), itemCopiar));
 		itemPegar.addActionListener(e -> campo.paste());
 		itemSeleccionarTodo.addActionListener(e -> campo.selectAll());
+		menu.add(itemCopiar);
+		menu.addSeparator();
 		menu.add(itemPegar);
 		menu.addSeparator();
 		menu.add(itemSeleccionarTodo);
@@ -124,6 +139,7 @@ public final class MenusContextuales {
 		campo.addMouseListener(new MouseAdapter() {
 			private void comprobarPopup(MouseEvent e) {
 				if (e.isPopupTrigger()) {
+					itemCopiar.setEnabled(campo.getPassword().length > 0);
 					itemPegar.setEnabled(campo.isEditable());
 					menu.show(e.getComponent(), e.getX(), e.getY());
 				}
@@ -147,7 +163,9 @@ public final class MenusContextuales {
 
 	public static void agregarMenuTabla(JTable tabla, int columnaSensible) {
 		JPopupMenu menu = new JPopupMenu();
-		JMenuItem itemCopiarCelda = new JMenuItem("📋 Copiar dato de la celda");
+		JMenuItem itemCopiarCelda = new JMenuItem("Copiar dato de la celda", new FlatSVGIcon("icons/copy.svg", 16, 16));
+		JMenuItem itemCopiarContrasena = new JMenuItem("Copiar contraseña",
+				new FlatSVGIcon("icons/copy.svg", 16, 16));
 
 		itemCopiarCelda.addActionListener(e -> {
 			int row = tabla.getSelectedRow();
@@ -155,17 +173,32 @@ public final class MenusContextuales {
 			if (row != -1 && col != -1 && tabla.convertColumnIndexToModel(col) != columnaSensible) {
 				Object val = tabla.getValueAt(row, col);
 				if (val != null) {
-					StringSelection selection = new StringSelection(val.toString());
-					Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+					copiarAlPortapapeles(val.toString(), itemCopiarCelda);
 				}
 			}
 		});
 
+		itemCopiarContrasena.addActionListener(e -> {
+			int filaVista = tabla.getSelectedRow();
+			if (filaVista == -1 || columnaSensible < 0) {
+				return;
+			}
+			int filaModelo = tabla.convertRowIndexToModel(filaVista);
+			Object contrasena = tabla.getModel().getValueAt(filaModelo, columnaSensible);
+			if (contrasena != null) {
+				copiarContrasenaAlPortapapeles(contrasena.toString(), itemCopiarContrasena);
+			}
+		});
+
 		menu.add(itemCopiarCelda);
+		menu.add(itemCopiarContrasena);
 
 		tabla.addMouseListener(new MouseAdapter() {
 			private void comprobarPopup(MouseEvent e) {
 				if (e.isPopupTrigger()) {
+					if (tabla.getSelectedRowCount() > 1) {
+						return;
+					}
 					int r = tabla.rowAtPoint(e.getPoint());
 					int c = tabla.columnAtPoint(e.getPoint());
 					if (r >= 0 && r < tabla.getRowCount() && c >= 0 && c < tabla.getColumnCount()) {
@@ -173,6 +206,13 @@ public final class MenusContextuales {
 						tabla.setColumnSelectionInterval(c, c);
 					}
 					itemCopiarCelda.setEnabled(c >= 0 && tabla.convertColumnIndexToModel(c) != columnaSensible);
+					int filaModelo = r >= 0 ? tabla.convertRowIndexToModel(r) : -1;
+					boolean esContrasena = c >= 0 && tabla.convertColumnIndexToModel(c) == columnaSensible;
+					boolean hayContrasena = esContrasena && filaModelo >= 0
+							&& tabla.getModel().getValueAt(filaModelo, columnaSensible) != null;
+					itemCopiarCelda.setVisible(!esContrasena);
+					itemCopiarContrasena.setVisible(esContrasena);
+					itemCopiarContrasena.setEnabled(hayContrasena);
 					menu.show(e.getComponent(), e.getX(), e.getY());
 				}
 			}
@@ -185,5 +225,83 @@ public final class MenusContextuales {
 				comprobarPopup(e);
 			}
 		});
+	}
+
+	public static void copiarAlPortapapeles(String texto) {
+		StringSelection selection = new StringSelection(texto);
+		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+	}
+
+	public static void copiarAlPortapapeles(String texto, AbstractButton boton) {
+		copiarAlPortapapeles(texto, boton, new FlatSVGIcon("icons/check.svg", 16, 16));
+	}
+
+	public static void copiarAlPortapapeles(String texto, AbstractButton boton, Icon iconoConfirmacion) {
+		copiarAlPortapapeles(texto);
+		mostrarConfirmacionCopia(boton, iconoConfirmacion);
+	}
+
+	public static void copiarContrasenaAlPortapapeles(String texto, AbstractButton boton) {
+		copiarContrasenaAlPortapapeles(texto, boton, new FlatSVGIcon("icons/check.svg", 16, 16));
+	}
+
+	public static void copiarContrasenaAlPortapapeles(String texto, AbstractButton boton, Icon iconoConfirmacion) {
+		Clipboard portapapeles = Toolkit.getDefaultToolkit().getSystemClipboard();
+		StringSelection seleccion = new StringSelection(texto);
+		synchronized (BLOQUEO_PORTAPAPELES) {
+			portapapeles.setContents(seleccion, null);
+			portapapelesContrasenaPendiente = portapapeles;
+			seleccionContrasenaPendiente = seleccion;
+		}
+
+		Timer temporizadorLimpieza = new Timer(30_000,
+				e -> limpiarPortapapelesSiCoincide(portapapeles, seleccion));
+		temporizadorLimpieza.setRepeats(false);
+		temporizadorLimpieza.start();
+
+		mostrarConfirmacionCopia(boton, iconoConfirmacion);
+	}
+
+	private static void limpiarPortapapelesSiCoincide(Clipboard portapapeles, StringSelection seleccion) {
+		synchronized (BLOQUEO_PORTAPAPELES) {
+			if (portapapeles.getContents(null) == seleccion) {
+				portapapeles.setContents(new StringSelection(""), null);
+			}
+			if (portapapelesContrasenaPendiente == portapapeles
+					&& seleccionContrasenaPendiente == seleccion) {
+				portapapelesContrasenaPendiente = null;
+				seleccionContrasenaPendiente = null;
+			}
+		}
+	}
+
+	public static void limpiarContrasenaPendienteDelPortapapeles() {
+		synchronized (BLOQUEO_PORTAPAPELES) {
+			if (portapapelesContrasenaPendiente != null && seleccionContrasenaPendiente != null) {
+				limpiarPortapapelesSiCoincide(portapapelesContrasenaPendiente, seleccionContrasenaPendiente);
+			}
+		}
+	}
+
+	private static void mostrarConfirmacionCopia(AbstractButton boton, Icon iconoConfirmacion) {
+		Icon iconoOriginal = (Icon) boton.getClientProperty(ICONO_COPIA_ORIGINAL);
+		if (iconoOriginal == null) {
+			iconoOriginal = boton.getIcon();
+			boton.putClientProperty(ICONO_COPIA_ORIGINAL, iconoOriginal);
+		}
+		boton.setIcon(iconoConfirmacion);
+
+		Object temporizadorExistente = boton.getClientProperty(TEMPORIZADOR_COPIA);
+		if (temporizadorExistente instanceof Timer) {
+			((Timer) temporizadorExistente).stop();
+		}
+		final Icon iconoRestaurar = iconoOriginal;
+		Timer temporizador = new Timer(1000, e -> {
+			boton.setIcon(iconoRestaurar);
+			boton.putClientProperty(TEMPORIZADOR_COPIA, null);
+		});
+		temporizador.setRepeats(false);
+		boton.putClientProperty(TEMPORIZADOR_COPIA, temporizador);
+		temporizador.start();
 	}
 }
