@@ -8,6 +8,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Base64;
 
 public final class Cifrador {
@@ -34,14 +35,37 @@ public final class Cifrador {
 	}
 
 	public static String crearHashPassword(String password) throws Exception {
+		if (password == null) {
+			throw new IllegalArgumentException("La contraseña no puede ser nula");
+		}
+		char[] passwordChars = password.toCharArray();
+		try {
+			return crearHashPassword(passwordChars, FORMATO_HASH_EXACTO);
+		} finally {
+			Arrays.fill(passwordChars, '\0');
+		}
+	}
+
+	public static String crearHashPassword(char[] password) throws Exception {
 		return crearHashPassword(password, FORMATO_HASH_EXACTO);
 	}
 
 	public static String crearHashPasswordNormalizado(String password) throws Exception {
-		return crearHashPassword(password.trim(), FORMATO_HASH_NORMALIZADO);
+		if (password == null) {
+			throw new IllegalArgumentException("La contraseña no puede ser nula");
+		}
+		char[] passwordChars = password.trim().toCharArray();
+		try {
+			return crearHashPassword(passwordChars, FORMATO_HASH_NORMALIZADO);
+		} finally {
+			Arrays.fill(passwordChars, '\0');
+		}
 	}
 
-	private static String crearHashPassword(String password, String formato) throws Exception {
+	private static String crearHashPassword(char[] password, String formato) throws Exception {
+		if (password == null || password.length == 0) {
+			throw new IllegalArgumentException("La contraseña no puede ser nula ni vacía");
+		}
 		byte[] salt = generarBytesAleatorios(LONGITUD_SAL);
 		byte[] hash = derivarClave(password, salt, ITERACIONES_PBKDF2);
 		return formato + "$" + ITERACIONES_PBKDF2 + "$" + Base64.getEncoder().encodeToString(salt) + "$"
@@ -49,11 +73,29 @@ public final class Cifrador {
 	}
 
 	public static boolean verificarPassword(String password, String hashGuardado) {
-		if (hashGuardado == null)
+		if (password == null || hashGuardado == null) {
 			return false;
+		}
+		char[] passwordChars = password.toCharArray();
+		try {
+			return verificarPassword(passwordChars, hashGuardado);
+		} finally {
+			Arrays.fill(passwordChars, '\0');
+		}
+	}
+
+	public static boolean verificarPassword(char[] password, String hashGuardado) {
+		if (hashGuardado == null || password == null || password.length == 0) {
+			return false;
+		}
 		if (!esHashModerno(hashGuardado)) {
-			return MessageDigest.isEqual(hashSHA256(password).getBytes(StandardCharsets.US_ASCII),
-					hashGuardado.getBytes(StandardCharsets.US_ASCII));
+			String passwordString = new String(password);
+			try {
+				return MessageDigest.isEqual(hashSHA256(passwordString).getBytes(StandardCharsets.US_ASCII),
+						hashGuardado.getBytes(StandardCharsets.US_ASCII));
+			} finally {
+				passwordString = null;
+			}
 		}
 
 		try {
@@ -95,11 +137,26 @@ public final class Cifrador {
 	}
 
 	public static byte[] derivarClave(String password, byte[] salt, int iteraciones) throws Exception {
+		if (password == null) {
+			throw new IllegalArgumentException("La contraseña no puede ser nula");
+		}
+		char[] passwordChars = password.toCharArray();
+		try {
+			return derivarClave(passwordChars, salt, iteraciones);
+		} finally {
+			Arrays.fill(passwordChars, '\0');
+		}
+	}
+
+	public static byte[] derivarClave(char[] password, byte[] salt, int iteraciones) throws Exception {
 		validarIteraciones(iteraciones);
+		if (password == null || password.length == 0) {
+			throw new IllegalArgumentException("La contraseña no puede ser nula ni vacía");
+		}
 		if (salt == null || salt.length < LONGITUD_SAL) {
 			throw new IllegalArgumentException("La sal criptográfica no es válida");
 		}
-		PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iteraciones, 256);
+		PBEKeySpec spec = new PBEKeySpec(password, salt, iteraciones, 256);
 		try {
 			return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
 		} finally {

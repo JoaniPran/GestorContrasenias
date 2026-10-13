@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public final class AlmacenUsuarios {
@@ -43,16 +44,34 @@ public final class AlmacenUsuarios {
 	}
 
 	static boolean registrarUsuario(String user, String pass, Path archivo) {
-		String usuario = user.trim();
-		String contrasena = pass;
-		if (!esNombreUsuarioValido(usuario) || contrasena.length() < 12 || existeUsuario(usuario, archivo)) {
+		if (pass == null) {
+			return false;
+		}
+		char[] passwordChars = pass.toCharArray();
+		try {
+			return registrarUsuario(user, passwordChars, archivo);
+		} finally {
+			Arrays.fill(passwordChars, '\0');
+		}
+	}
+
+	public static boolean registrarUsuario(String user, char[] pass) {
+		return registrarUsuario(user, pass, Paths.get(ARCHIVO_USUARIOS));
+	}
+
+	static boolean registrarUsuario(String user, char[] pass, Path archivo) {
+		if (pass == null || pass.length < 12) {
+			return false;
+		}
+		String usuario = user == null ? "" : user.trim();
+		if (!esNombreUsuarioValido(usuario) || existeUsuario(usuario, archivo)) {
 			return false;
 		}
 		try {
 			List<String> lineas = Files.exists(archivo)
 					? Files.readAllLines(archivo, StandardCharsets.UTF_8)
 					: new ArrayList<>();
-			lineas.add(usuario + ";" + Cifrador.crearHashPassword(contrasena));
+			lineas.add(usuario + ";" + Cifrador.crearHashPassword(pass));
 			guardarLineas(lineas, archivo);
 			return true;
 		} catch (Exception e) {
@@ -61,11 +80,19 @@ public final class AlmacenUsuarios {
 	}
 
 	public static boolean validarCredenciales(String user, String pass) {
-		return autenticar(user, pass, Paths.get(ARCHIVO_USUARIOS)) != null;
+		return validarCredenciales(user, pass, Paths.get(ARCHIVO_USUARIOS));
 	}
 
 	static boolean validarCredenciales(String user, String pass, Path archivo) {
-		return autenticar(user, pass, archivo) != null;
+		if (pass == null) {
+			return false;
+		}
+		char[] passwordChars = pass.toCharArray();
+		try {
+			return autenticar(user, passwordChars, archivo) != null;
+		} finally {
+			Arrays.fill(passwordChars, '\0');
+		}
 	}
 
 	public static ResultadoAutenticacion autenticar(String user, String pass) {
@@ -73,27 +100,48 @@ public final class AlmacenUsuarios {
 	}
 
 	static ResultadoAutenticacion autenticar(String user, String pass, Path archivo) {
-		if (!Files.exists(archivo))
+		if (pass == null) {
+			return null;
+		}
+		char[] passwordChars = pass.toCharArray();
+		try {
+			return autenticar(user, passwordChars, archivo);
+		} finally {
+			Arrays.fill(passwordChars, '\0');
+		}
+	}
+
+	public static ResultadoAutenticacion autenticar(String user, char[] pass) {
+		return autenticar(user, pass, Paths.get(ARCHIVO_USUARIOS));
+	}
+
+	static ResultadoAutenticacion autenticar(String user, char[] pass, Path archivo) {
+		if (!Files.exists(archivo) || pass == null || pass.length == 0)
 			return null;
 		try {
 			ArchivoPrivado.restringirPermisos(archivo);
 			List<String> lineas = Files.readAllLines(archivo, StandardCharsets.UTF_8);
 			for (int i = 0; i < lineas.size(); i++) {
 				String[] partes = lineas.get(i).split(";", 2);
-				if (partes.length >= 2) {
-					String contrasena = Cifrador.esHashConEspaciosExactos(partes[1]) ? pass : pass.trim();
-					if (partes[0].equalsIgnoreCase(user.trim())
-							&& Cifrador.verificarPassword(contrasena, partes[1])) {
-						if (!Cifrador.esHashConEspaciosExactos(partes[1])
-								&& !Cifrador.esHashConEspaciosNormalizados(partes[1])) {
-							try {
-								lineas.set(i, partes[0] + ";" + Cifrador.crearHashPasswordNormalizado(contrasena));
-								guardarLineas(lineas, archivo);
-							} catch (Exception ignored) {
-								// Un fallo al migrar el hash no debe bloquear el acceso al usuario legítimo.
+				if (partes.length >= 2 && partes[0].equalsIgnoreCase(user.trim())) {
+					String claveMaestra = new String(pass);
+					String contrasena = Cifrador.esHashConEspaciosExactos(partes[1]) ? claveMaestra : claveMaestra.trim();
+					char[] contrasenaVerificacion = contrasena.toCharArray();
+					try {
+						if (Cifrador.verificarPassword(contrasenaVerificacion, partes[1])) {
+							if (!Cifrador.esHashConEspaciosExactos(partes[1])
+									&& !Cifrador.esHashConEspaciosNormalizados(partes[1])) {
+								try {
+									lineas.set(i, partes[0] + ";" + Cifrador.crearHashPasswordNormalizado(contrasena));
+									guardarLineas(lineas, archivo);
+								} catch (Exception ignored) {
+									// Un fallo al migrar el hash no debe bloquear el acceso al usuario legítimo.
+								}
 							}
+							return new ResultadoAutenticacion(contrasena);
 						}
-						return new ResultadoAutenticacion(contrasena);
+					} finally {
+						Arrays.fill(contrasenaVerificacion, '\0');
 					}
 				}
 			}

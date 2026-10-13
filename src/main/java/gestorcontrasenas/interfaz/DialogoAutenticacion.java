@@ -24,6 +24,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.IOException;
+import java.util.Arrays;
 
 import static gestorcontrasenas.interfaz.PaletaColores.*;
 import gestorcontrasenas.datos.AlmacenPreferencias;
@@ -99,22 +100,26 @@ public class DialogoAutenticacion extends JDialog {
 
 		btnLogin.addActionListener(e -> {
 			String u = txtU.getText().trim();
-			String p = new String(txtP.getPassword());
-			ResultadoAutenticacion autenticacion = AlmacenUsuarios.autenticar(u, p);
-			if (autenticacion != null) {
-				try {
-					AlmacenPreferencias.guardarUsuarioRecordado(recordarUsuario.isSelected() ? u : "");
-				} catch (IOException ex) {
-					JOptionPane.showMessageDialog(this, "No se pudo guardar la preferencia de usuario: "
-							+ ex.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
+			char[] password = txtP.getPassword();
+			try {
+				ResultadoAutenticacion autenticacion = AlmacenUsuarios.autenticar(u, password);
+				if (autenticacion != null) {
+					try {
+						AlmacenPreferencias.guardarUsuarioRecordado(recordarUsuario.isSelected() ? u : "");
+					} catch (IOException ex) {
+						JOptionPane.showMessageDialog(this, "No se pudo guardar la preferencia de usuario: "
+								+ ex.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
+					}
+					usuarioAutenticado = u;
+					claveMaestra = autenticacion.getClaveMaestra();
+					exito = true;
+					dispose();
+				} else {
+					JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Error",
+							JOptionPane.ERROR_MESSAGE);
 				}
-				usuarioAutenticado = u;
-				claveMaestra = autenticacion.getClaveMaestra();
-				exito = true;
-				dispose();
-			} else {
-				JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Error",
-						JOptionPane.ERROR_MESSAGE);
+			} finally {
+				Arrays.fill(password, '\0');
 			}
 		});
 

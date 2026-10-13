@@ -3,6 +3,7 @@ package gestorcontrasenas.interfaz;
 import gestorcontrasenas.modelo.RegistroContrasena;
 import gestorcontrasenas.servicio.ServicioCredenciales;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -172,13 +173,18 @@ public final class ControladorRegistros {
 	private RegistroContrasena leerFormulario() {
 		String cuentaActual = cuenta.getText().trim();
 		String usuarioActual = usuario.getText().trim();
-		String passwordActual = new String(contrasena.getPassword());
-		if (cuentaActual.isEmpty() || usuarioActual.isEmpty() || passwordActual.isEmpty()) {
-			presentador.mostrar("Por favor completa todos los campos.",
-					"Campos Incompletos", JOptionPane.WARNING_MESSAGE);
-			return null;
+		char[] passwordChars = contrasena.getPassword();
+		try {
+			String passwordActual = new String(passwordChars);
+			if (cuentaActual.isEmpty() || usuarioActual.isEmpty() || passwordActual.isEmpty()) {
+				presentador.mostrar("Por favor completa todos los campos.",
+						"Campos Incompletos", JOptionPane.WARNING_MESSAGE);
+				return null;
+			}
+			return new RegistroContrasena(cuentaActual, usuarioActual, passwordActual);
+		} finally {
+			Arrays.fill(passwordChars, '\0');
 		}
-		return new RegistroContrasena(cuentaActual, usuarioActual, passwordActual);
 	}
 
 	private boolean existeDuplicado(RegistroContrasena candidato, int filaIgnorada) {
