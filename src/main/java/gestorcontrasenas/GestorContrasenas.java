@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableRowSorter;
 
 public class GestorContrasenas extends JFrame {
