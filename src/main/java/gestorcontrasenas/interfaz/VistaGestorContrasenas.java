@@ -97,15 +97,25 @@ public final class VistaGestorContrasenas {
 		panelPrincipal = new JPanel(new BorderLayout(16, 18));
 		panelPrincipal.setBorder(new EmptyBorder(18, 24, 22, 24));
 
+		panelPrincipal.add(crearPanelHeader(), BorderLayout.NORTH);
+		panelPrincipal.add(crearPanelContenido(), BorderLayout.CENTER);
+		return panelPrincipal;
+	}
+
+	private JPanel crearPanelHeader() {
 		JPanel panelHeader = new JPanel(new BorderLayout(14, 0));
 		panelHeader.setOpaque(false);
+		panelHeader.add(crearIdentidadApp(), BorderLayout.WEST);
+		panelHeader.add(crearPanelAccionesHeader(), BorderLayout.EAST);
+		return panelHeader;
+	}
 
+	private JPanel crearIdentidadApp() {
 		JPanel identidadApp = new JPanel(new BorderLayout(12, 0));
 		identidadApp.setOpaque(false);
 		panelIconoApp = new PanelRedondeado(14, colorResaltado, colorResaltado, false);
 		panelIconoApp.setLayout(new GridBagLayout());
-		JLabel iconoEscudo = new JLabel(crearIcono.apply("icons/shield.svg", 24));
-		panelIconoApp.add(iconoEscudo);
+		panelIconoApp.add(new JLabel(crearIcono.apply("icons/shield.svg", 24)));
 		JPanel textosApp = new JPanel();
 		textosApp.setOpaque(false);
 		textosApp.setLayout(new BoxLayout(textosApp, BoxLayout.Y_AXIS));
@@ -118,7 +128,10 @@ public final class VistaGestorContrasenas {
 		textosApp.add(lblSubtitulo);
 		identidadApp.add(panelIconoApp, BorderLayout.WEST);
 		identidadApp.add(textosApp, BorderLayout.CENTER);
+		return identidadApp;
+	}
 
+	private JPanel crearPanelAccionesHeader() {
 		lblUserBadge = new JLabel(" " + usuario + " ");
 		lblUserBadge.setIcon(new FlatSVGIcon("icons/user.svg", 14, 14));
 		lblUserBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -143,84 +156,21 @@ public final class VistaGestorContrasenas {
 		panelAccionesHeader.add(lblUserBadge);
 		panelAccionesHeader.add(btnConfiguracion);
 		panelAccionesHeader.add(btnCerrarSesion);
-		panelHeader.add(identidadApp, BorderLayout.WEST);
-		panelHeader.add(panelAccionesHeader, BorderLayout.EAST);
-		panelPrincipal.add(panelHeader, BorderLayout.NORTH);
+		return panelAccionesHeader;
+	}
 
+	private JPanel crearPanelContenido() {
 		JPanel panelContenido = new JPanel(new BorderLayout(12, 12));
 		panelContenido.setOpaque(false);
-		construirPanelBoveda();
-		panelFormulario = new PanelRedondeado(14, colorTarjeta, colorBorde);
-		panelFormulario.setLayout(new GridBagLayout());
-		panelFormulario.setBorder(new EmptyBorder(14, 16, 14, 16));
-		BotonEstilizado[] botonesFormulario = construirFormulario();
-		btnGuardar = botonesFormulario[0];
-		btnActualizar = botonesFormulario[1];
-		btnEliminar = botonesFormulario[2];
-		btnLimpiar = botonesFormulario[3];
-		btnImportarGoogle = botonesFormulario[4];
-
+		crearBloqueEstadoBoveda();
+		crearBloqueFormulario();
 		construirTablaYCredenciales();
-		JPanel panelSuperior = new JPanel();
-		panelSuperior.setOpaque(false);
-		panelSuperior.setLayout(new BoxLayout(panelSuperior, BoxLayout.Y_AXIS));
-		panelEstadoBoveda.setAlignmentX(Component.LEFT_ALIGNMENT);
-		panelFormulario.setAlignmentX(Component.LEFT_ALIGNMENT);
-		panelSuperior.add(panelEstadoBoveda);
-		panelSuperior.add(Box.createVerticalStrut(12));
-		panelSuperior.add(panelFormulario);
-		panelContenido.add(panelSuperior, BorderLayout.NORTH);
+		panelContenido.add(crearPanelSuperior(), BorderLayout.NORTH);
 		panelContenido.add(panelTarjetaCredenciales, BorderLayout.CENTER);
-		panelPrincipal.add(panelContenido, BorderLayout.CENTER);
-		return panelPrincipal;
+		return panelContenido;
 	}
 
-	public void aplicarColoresInterfaz(Color colorFondo, Color colorTarjeta, Color colorEntrada, Color colorTexto,
-			Color colorTextoSecundario, Color colorBorde, Color colorResaltado, boolean modoOscuro,
-			boolean almacenamientoDisponible, Runnable estilizarTabla) {
-		this.colorTarjeta = colorTarjeta;
-		this.colorBorde = colorBorde;
-		this.colorResaltado = colorResaltado;
-		panelPrincipal.setBackground(colorFondo);
-		lblTitulo.setForeground(colorTexto);
-		lblSubtitulo.setForeground(colorTextoSecundario);
-		lblTituloFormulario.setForeground(colorTexto);
-		lblTituloCredenciales.setForeground(colorTexto);
-		lblCuenta.setForeground(colorTexto);
-		lblUsuario.setForeground(colorTexto);
-		lblPassword.setForeground(colorTexto);
-		lblBuscar.setForeground(colorTexto);
-		lblEstadoBoveda.setForeground(almacenamientoDisponible ? colorTexto : COLOR_DANGER);
-		lblDetalleEstado.setForeground(colorTextoSecundario);
-		lblContadorCredenciales.setForeground(colorTextoSecundario);
-
-		lblUserBadge.setOpaque(false);
-		Color tintaEncabezado = modoOscuro ? Color.WHITE : Color.BLACK;
-		lblUserBadge.setForeground(tintaEncabezado);
-		lblUserBadge.setIcon(crearIcono.apply("icons/user.svg", 14));
-		btnConfiguracion.setForeground(tintaEncabezado);
-		btnConfiguracion.setIcon(crearIcono.apply("icons/settings.svg", 16));
-		lblBuscar.setForeground(tintaEncabezado);
-		lblBuscar.setIcon(crearIcono.apply("icons/search.svg", 14));
-
-		panelIconoApp.setColores(colorResaltado, colorResaltado);
-		panelEstadoBoveda.setColores(colorTarjeta, colorBorde);
-		panelFormulario.setColores(colorTarjeta, colorBorde);
-		panelTarjetaCredenciales.setColores(colorTarjeta, colorBorde);
-		for (JComponent componente : componentesEstilizados) {
-			componente.setBackground(colorEntrada);
-			componente.setForeground(colorTexto);
-			if (componente instanceof JTextField) {
-				((JTextField) componente).setCaretColor(colorTexto);
-			}
-			componente.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createLineBorder(colorBorde, 1, true),
-					new EmptyBorder(6, 8, 6, 8)));
-		}
-		estilizarTabla.run();
-	}
-
-	private void construirPanelBoveda() {
+	private void crearBloqueEstadoBoveda() {
 		panelEstadoBoveda = new PanelRedondeado(16, colorTarjeta, colorBorde);
 		panelEstadoBoveda.setLayout(new BorderLayout(14, 0));
 		panelEstadoBoveda.setBorder(new EmptyBorder(14, 18, 14, 18));
@@ -242,6 +192,83 @@ public final class VistaGestorContrasenas {
 		panelEstadoBoveda.add(iconoEstado, BorderLayout.WEST);
 		panelEstadoBoveda.add(textoEstado, BorderLayout.CENTER);
 		panelEstadoBoveda.add(lblContadorCredenciales, BorderLayout.EAST);
+	}
+
+	private void crearBloqueFormulario() {
+		panelFormulario = new PanelRedondeado(14, colorTarjeta, colorBorde);
+		panelFormulario.setLayout(new GridBagLayout());
+		panelFormulario.setBorder(new EmptyBorder(14, 16, 14, 16));
+		BotonEstilizado[] botonesFormulario = construirFormulario();
+		btnGuardar = botonesFormulario[0];
+		btnActualizar = botonesFormulario[1];
+		btnEliminar = botonesFormulario[2];
+		btnLimpiar = botonesFormulario[3];
+		btnImportarGoogle = botonesFormulario[4];
+	}
+
+	private JPanel crearPanelSuperior() {
+		JPanel panelSuperior = new JPanel();
+		panelSuperior.setOpaque(false);
+		panelSuperior.setLayout(new BoxLayout(panelSuperior, BoxLayout.Y_AXIS));
+		panelEstadoBoveda.setAlignmentX(Component.LEFT_ALIGNMENT);
+		panelFormulario.setAlignmentX(Component.LEFT_ALIGNMENT);
+		panelSuperior.add(panelEstadoBoveda);
+		panelSuperior.add(Box.createVerticalStrut(12));
+		panelSuperior.add(panelFormulario);
+		return panelSuperior;
+	}
+
+	public void aplicarColoresInterfaz(Color colorFondo, Color colorTarjeta, Color colorEntrada, Color colorTexto,
+			Color colorTextoSecundario, Color colorBorde, Color colorResaltado, boolean modoOscuro,
+			boolean almacenamientoDisponible, Runnable estilizarTabla) {
+		this.colorTarjeta = colorTarjeta;
+		this.colorBorde = colorBorde;
+		this.colorResaltado = colorResaltado;
+		panelPrincipal.setBackground(colorFondo);
+		aplicarColoresTexto(colorTexto, colorTextoSecundario, almacenamientoDisponible, modoOscuro);
+		panelIconoApp.setColores(colorResaltado, colorResaltado);
+		panelEstadoBoveda.setColores(colorTarjeta, colorBorde);
+		panelFormulario.setColores(colorTarjeta, colorBorde);
+		panelTarjetaCredenciales.setColores(colorTarjeta, colorBorde);
+		aplicarEstiloCampos(colorEntrada, colorTexto, colorBorde);
+		estilizarTabla.run();
+	}
+
+	private void aplicarColoresTexto(Color colorTexto, Color colorTextoSecundario, boolean almacenamientoDisponible,
+			boolean modoOscuro) {
+		lblTitulo.setForeground(colorTexto);
+		lblSubtitulo.setForeground(colorTextoSecundario);
+		lblTituloFormulario.setForeground(colorTexto);
+		lblTituloCredenciales.setForeground(colorTexto);
+		lblCuenta.setForeground(colorTexto);
+		lblUsuario.setForeground(colorTexto);
+		lblPassword.setForeground(colorTexto);
+		lblBuscar.setForeground(colorTexto);
+		lblEstadoBoveda.setForeground(almacenamientoDisponible ? colorTexto : COLOR_DANGER);
+		lblDetalleEstado.setForeground(colorTextoSecundario);
+		lblContadorCredenciales.setForeground(colorTextoSecundario);
+
+		lblUserBadge.setOpaque(false);
+		Color tintaEncabezado = modoOscuro ? Color.WHITE : Color.BLACK;
+		lblUserBadge.setForeground(tintaEncabezado);
+		lblUserBadge.setIcon(crearIcono.apply("icons/user.svg", 14));
+		btnConfiguracion.setForeground(tintaEncabezado);
+		btnConfiguracion.setIcon(crearIcono.apply("icons/settings.svg", 16));
+		lblBuscar.setForeground(tintaEncabezado);
+		lblBuscar.setIcon(crearIcono.apply("icons/search.svg", 14));
+	}
+
+	private void aplicarEstiloCampos(Color colorEntrada, Color colorTexto, Color colorBorde) {
+		for (JComponent componente : componentesEstilizados) {
+			componente.setBackground(colorEntrada);
+			componente.setForeground(colorTexto);
+			if (componente instanceof JTextField) {
+				((JTextField) componente).setCaretColor(colorTexto);
+			}
+			componente.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createLineBorder(colorBorde, 1, true),
+					new EmptyBorder(6, 8, 6, 8)));
+		}
 	}
 
 	private BotonEstilizado[] construirFormulario() {
@@ -308,41 +335,54 @@ public final class VistaGestorContrasenas {
 
 	private void construirTablaYCredenciales() {
 		modelo = new ModeloCredenciales(() -> tabla == null ? 0 : tabla.getSelectedRowCount());
-		tabla = new JTable(modelo);
-		tabla.setDragEnabled(true);
-		tabla.setDropMode(DropMode.INSERT_ROWS);
-		tabla.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-		tabla.setTransferHandler(new TableRowTransferHandler(tabla, reordenarGrupo));
-		ordenador = new TableRowSorter<>(modelo);
-		for (int columna = 0; columna < modelo.getColumnCount(); columna++) {
-			ordenador.setSortable(columna, false);
-		}
-		tabla.setRowSorter(ordenador);
-
+		tabla = crearTabla();
 		lblTituloCredenciales = new JLabel("Tus credenciales");
 		lblTituloCredenciales.setFont(new Font("Segoe UI", Font.BOLD, 14));
 		lblBuscar = crearEtiqueta("Buscar");
 		lblBuscar.setIcon(new FlatSVGIcon("icons/search.svg", 14, 14));
-		JPanel panelBusqueda = new JPanel(new BorderLayout(10, 0));
-		panelBusqueda.setOpaque(false);
 		txtBuscar = crearCampoTexto();
 		txtBuscar.setToolTipText("Filtra por servicio/aplicación o correo electrónico");
-		panelBusqueda.add(lblBuscar, BorderLayout.WEST);
-		panelBusqueda.add(txtBuscar, BorderLayout.CENTER);
-		JPanel encabezadoCredenciales = new JPanel(new BorderLayout(12, 0));
-		encabezadoCredenciales.setOpaque(false);
-		encabezadoCredenciales.add(lblTituloCredenciales, BorderLayout.NORTH);
-		encabezadoCredenciales.add(panelBusqueda, BorderLayout.CENTER);
+		JPanel panelBusqueda = crearPanelBusqueda();
 		JPanel contenidoCredenciales = new JPanel(new BorderLayout(10, 12));
 		contenidoCredenciales.setOpaque(false);
 		contenidoCredenciales.setBorder(new EmptyBorder(14, 16, 14, 16));
-		contenidoCredenciales.add(encabezadoCredenciales, BorderLayout.NORTH);
+		contenidoCredenciales.add(crearEncabezadoCredenciales(), BorderLayout.NORTH);
 		scrollPane = new JScrollPane(tabla);
 		scrollPane.setBorder(BorderFactory.createEmptyBorder());
 		contenidoCredenciales.add(scrollPane, BorderLayout.CENTER);
 		panelTarjetaCredenciales = new PanelRedondeado(14, colorTarjeta, colorBorde);
 		panelTarjetaCredenciales.setLayout(new BorderLayout());
 		panelTarjetaCredenciales.add(contenidoCredenciales, BorderLayout.CENTER);
+	}
+
+	private JTable crearTabla() {
+		JTable nuevaTabla = new JTable(modelo);
+		nuevaTabla.setDragEnabled(true);
+		nuevaTabla.setDropMode(DropMode.INSERT_ROWS);
+		nuevaTabla.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		nuevaTabla.setTransferHandler(new TableRowTransferHandler(nuevaTabla, reordenarGrupo));
+		ordenador = new TableRowSorter<>(modelo);
+		for (int columna = 0; columna < modelo.getColumnCount(); columna++) {
+			ordenador.setSortable(columna, false);
+		}
+		nuevaTabla.setRowSorter(ordenador);
+		return nuevaTabla;
+	}
+
+	private JPanel crearEncabezadoCredenciales() {
+		JPanel encabezadoCredenciales = new JPanel(new BorderLayout(12, 0));
+		encabezadoCredenciales.setOpaque(false);
+		encabezadoCredenciales.add(lblTituloCredenciales, BorderLayout.NORTH);
+		encabezadoCredenciales.add(crearPanelBusqueda(), BorderLayout.CENTER);
+		return encabezadoCredenciales;
+	}
+
+	private JPanel crearPanelBusqueda() {
+		JPanel panelBusqueda = new JPanel(new BorderLayout(10, 0));
+		panelBusqueda.setOpaque(false);
+		panelBusqueda.add(lblBuscar, BorderLayout.WEST);
+		panelBusqueda.add(txtBuscar, BorderLayout.CENTER);
+		return panelBusqueda;
 	}
 
 	private JLabel crearEtiqueta(String texto) {

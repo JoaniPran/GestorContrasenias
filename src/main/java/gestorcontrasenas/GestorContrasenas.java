@@ -14,6 +14,7 @@ import gestorcontrasenas.interfaz.ControladorRegistros;
 import gestorcontrasenas.interfaz.DialogoAutenticacion;
 import gestorcontrasenas.interfaz.DialogoConfiguracion;
 import gestorcontrasenas.interfaz.DialogoImportacionGoogle;
+import gestorcontrasenas.interfaz.Dialogos;
 import gestorcontrasenas.interfaz.EstiloTablaCredenciales;
 import gestorcontrasenas.interfaz.MenusContextuales;
 import gestorcontrasenas.interfaz.ModeloCredenciales;
@@ -79,8 +80,7 @@ public class GestorContrasenas extends JFrame {
 				.cargarConfirmacionMostrarContrasena(usuarioLogueado);
 		actualizarColoresTema();
 		construirInterfaz(usuarioLogueado);
-		vista.aplicarColoresInterfaz(colorBg, colorCard, colorInput, colorTextPrimary, colorTextMuted, colorBorder,
-				colorResaltado, modoOscuro, almacenamientoDisponible, this::estilarTabla);
+		aplicarTemaInterfaz();
 		cargarDatosGuardados();
 		protectorVentana = new ProtectorVentana(this, tabla, () -> {
 			if (!cuentasConPasswordVisible.isEmpty()) {
@@ -222,6 +222,11 @@ public class GestorContrasenas extends JFrame {
 		colorBorder = tema.getBorde();
 	}
 
+	private void aplicarTemaInterfaz() {
+		vista.aplicarColoresInterfaz(colorBg, colorCard, colorInput, colorTextPrimary, colorTextMuted, colorBorder,
+				colorResaltado, modoOscuro, almacenamientoDisponible, this::estilarTabla);
+	}
+
 	private FlatSVGIcon crearIconoEncabezado(String recurso, int tamano) {
 		Color tinta = modoOscuro ? Color.WHITE : Color.BLACK;
 		FlatSVGIcon icono = new FlatSVGIcon(recurso, tamano, tamano);
@@ -242,8 +247,7 @@ public class GestorContrasenas extends JFrame {
 		colorResaltado = resaltado;
 		modoOscuro = oscuro;
 		actualizarColoresTema();
-		vista.aplicarColoresInterfaz(colorBg, colorCard, colorInput, colorTextPrimary, colorTextMuted, colorBorder,
-				colorResaltado, modoOscuro, almacenamientoDisponible, this::estilarTabla);
+		aplicarTemaInterfaz();
 		repaint();
 		revalidate();
 		return true;
@@ -272,7 +276,11 @@ public class GestorContrasenas extends JFrame {
 	private void estilarTabla() {
 		new EstiloTablaCredenciales(colorCard, colorBorder, colorTextPrimary, colorTextMuted,
 				colorSeleccionTabla()).aplicar(tabla, scrollPane, modeloTabla);
-		ColumnaContrasena.instalar(tabla, new ColumnaContrasena.AccionesContrasena() {
+		ColumnaContrasena.instalar(tabla, accionesContrasena());
+	}
+
+	private ColumnaContrasena.AccionesContrasena accionesContrasena() {
+		return new ColumnaContrasena.AccionesContrasena() {
 			@Override
 			public boolean esEncabezado(int filaModelo) {
 				return esFilaCabecera(filaModelo);
@@ -330,7 +338,7 @@ public class GestorContrasenas extends JFrame {
 				MenusContextuales.copiarContrasenaAlPortapapeles(contrasena, boton,
 						crearIconoEncabezado("icons/check.svg", 16));
 			}
-		});
+		};
 	}
 
 	private Color colorSeleccionTabla() {
@@ -406,10 +414,7 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private void mostrarMensajeEnDialogo(JDialog dialogo, String mensaje, String titulo, int tipo) {
-		UIManager.put("OptionPane.background", colorCard);
-		UIManager.put("Panel.background", colorCard);
-		UIManager.put("OptionPane.messageForeground", colorTextPrimary);
-		JOptionPane.showMessageDialog(dialogo, mensaje, titulo, tipo);
+		Dialogos.mostrarMensaje(dialogo, mensaje, titulo, tipo, colorCard, colorTextPrimary);
 	}
 
 	private void guardarEnArchivo() {
@@ -469,29 +474,16 @@ public class GestorContrasenas extends JFrame {
 			return true;
 		}
 
-		JCheckBox noMostrarMas = new JCheckBox("No volver a mostrar este mensaje");
-		noMostrarMas.setOpaque(false);
-		noMostrarMas.setForeground(colorTextPrimary);
-		JPanel contenido = new JPanel(new BorderLayout(0, 12));
-		contenido.setOpaque(true);
-		contenido.setBackground(colorCard);
-		contenido.setBorder(new EmptyBorder(12, 14, 12, 14));
-		JLabel mensaje = new JLabel("¿Está seguro que quiere mostrar la contraseña?");
-		mensaje.setForeground(colorTextPrimary);
-		contenido.add(mensaje, BorderLayout.NORTH);
-		contenido.add(noMostrarMas, BorderLayout.SOUTH);
-
-		UIManager.put("OptionPane.background", colorCard);
-		UIManager.put("Panel.background", colorCard);
-		UIManager.put("OptionPane.messageForeground", colorTextPrimary);
-		Object[] opciones = {"Aceptar", "Cancelar"};
-		int respuesta = JOptionPane.showOptionDialog(this, contenido, "Mostrar contraseña", JOptionPane.DEFAULT_OPTION,
-				JOptionPane.WARNING_MESSAGE, null, opciones, opciones[0]);
-		if (respuesta != 0) {
+		Dialogos.ResultadoConfirmacion resultado = Dialogos.confirmarConCheckbox(this,
+				"¿Está seguro que quiere mostrar la contraseña?",
+				"Mostrar contraseña",
+				colorCard,
+				colorTextPrimary,
+				"No volver a mostrar este mensaje");
+		if (!resultado.isAceptado()) {
 			return false;
 		}
-
-		if (noMostrarMas.isSelected()) {
+		if (resultado.isNoMostrarMas()) {
 			try {
 				AlmacenPreferencias.guardarPreferencias(usuarioLogueado, modoOscuro, false);
 				confirmarAntesDeMostrarContrasena = false;
@@ -505,10 +497,7 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private void mostrarMensaje(String msg, String titulo, int tipo) {
-		UIManager.put("OptionPane.background", colorCard);
-		UIManager.put("Panel.background", colorCard);
-		UIManager.put("OptionPane.messageForeground", colorTextPrimary);
-		JOptionPane.showMessageDialog(this, msg, titulo, tipo);
+		Dialogos.mostrarMensaje(this, msg, titulo, tipo, colorCard, colorTextPrimary);
 	}
 
 	public static void main(String[] args) {
