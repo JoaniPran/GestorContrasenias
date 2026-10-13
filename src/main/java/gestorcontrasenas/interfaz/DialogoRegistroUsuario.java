@@ -10,6 +10,7 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.Arrays;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -95,40 +96,47 @@ public class DialogoRegistroUsuario extends JDialog {
 
 	private void registrarUsuario() {
 		String usuario = txtUsuario.getText().trim();
-		String contrasena = new String(txtContrasena.getPassword());
-		String confirmarContrasena = new String(txtConfirmarContrasena.getPassword());
+		char[] contrasena = txtContrasena.getPassword();
+		char[] confirmarContrasena = txtConfirmarContrasena.getPassword();
+		try {
+			String contrasenaTexto = new String(contrasena);
+			String confirmarContrasenaTexto = new String(confirmarContrasena);
 
-		if (usuario.isEmpty() || contrasena.isEmpty() || confirmarContrasena.isEmpty()) {
-			mostrarError("Completa todos los campos.", "Campos incompletos");
-			return;
-		}
-		if (!AlmacenUsuarios.esNombreUsuarioValido(usuario)) {
-			mostrarError("El usuario debe tener entre 1 y 64 caracteres. Puede usar letras; @, números, puntos, guiones y guiones bajos son opcionales.",
-					"Usuario no válido");
-			return;
-		}
-		if (AlmacenUsuarios.existeUsuario(usuario)) {
-			mostrarError("Ya existe un usuario con ese nombre.", "Usuario duplicado");
-			return;
-		}
-		if (contrasena.length() < 12) {
-			mostrarError("La contraseña maestra debe tener al menos 12 caracteres.", "Contraseña débil");
-			return;
-		}
-		if (!contrasena.equals(confirmarContrasena)) {
-			mostrarError("Las contraseñas no coinciden.", "Confirmación incorrecta");
-			return;
-		}
-		if (!AlmacenUsuarios.registrarUsuario(usuario, contrasena)) {
-			mostrarError("No se pudo crear el usuario. Comprueba si ya existe e inténtalo de nuevo.",
-					"Error de registro");
-			return;
-		}
+			if (usuario.isEmpty() || contrasenaTexto.isEmpty() || confirmarContrasenaTexto.isEmpty()) {
+				mostrarError("Completa todos los campos.", "Campos incompletos");
+				return;
+			}
+			if (!AlmacenUsuarios.esNombreUsuarioValido(usuario)) {
+				mostrarError("El usuario debe tener entre 1 y 64 caracteres. Puede usar letras; @, números, puntos, guiones y guiones bajos son opcionales.",
+						"Usuario no válido");
+				return;
+			}
+			if (AlmacenUsuarios.existeUsuario(usuario)) {
+				mostrarError("Ya existe un usuario con ese nombre.", "Usuario duplicado");
+				return;
+			}
+			if (contrasenaTexto.length() < 12) {
+				mostrarError("La contraseña maestra debe tener al menos 12 caracteres.", "Contraseña débil");
+				return;
+			}
+			if (!contrasenaTexto.equals(confirmarContrasenaTexto)) {
+				mostrarError("Las contraseñas no coinciden.", "Confirmación incorrecta");
+				return;
+			}
+			if (!AlmacenUsuarios.registrarUsuario(usuario, contrasena)) {
+				mostrarError("No se pudo crear el usuario. Comprueba si ya existe e inténtalo de nuevo.",
+						"Error de registro");
+				return;
+			}
 
-		usuarioRegistrado = usuario;
-		JOptionPane.showMessageDialog(this, "Usuario creado. Ya puedes iniciar sesión.", "Registro completado",
-				JOptionPane.INFORMATION_MESSAGE);
-		dispose();
+			usuarioRegistrado = usuario;
+			JOptionPane.showMessageDialog(this, "Usuario creado. Ya puedes iniciar sesión.", "Registro completado",
+					JOptionPane.INFORMATION_MESSAGE);
+			dispose();
+		} finally {
+			Arrays.fill(contrasena, '\0');
+			Arrays.fill(confirmarContrasena, '\0');
+		}
 	}
 
 	private void mostrarError(String mensaje, String titulo) {
