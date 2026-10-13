@@ -17,6 +17,9 @@ public final class Cifrador {
 	private static final int LONGITUD_SAL = 16;
 	private static final int LONGITUD_NONCE_GCM = 12;
 	private static final int LONGITUD_TAG_GCM_BITS = 128;
+	private static final String FORMATO_HASH_ANTIGUO = "pbkdf2-sha256";
+	private static final String FORMATO_HASH_EXACTO = "pbkdf2-sha256-raw";
+	private static final String FORMATO_HASH_NORMALIZADO = "pbkdf2-sha256-trim";
 	private static final SecureRandom RANDOM = new SecureRandom();
 
 	private Cifrador() {
@@ -31,23 +34,31 @@ public final class Cifrador {
 	}
 
 	public static String crearHashPassword(String password) throws Exception {
+		return crearHashPassword(password, FORMATO_HASH_EXACTO);
+	}
+
+	public static String crearHashPasswordNormalizado(String password) throws Exception {
+		return crearHashPassword(password.trim(), FORMATO_HASH_NORMALIZADO);
+	}
+
+	private static String crearHashPassword(String password, String formato) throws Exception {
 		byte[] salt = generarBytesAleatorios(LONGITUD_SAL);
 		byte[] hash = derivarClave(password, salt, ITERACIONES_PBKDF2);
-		return "pbkdf2-sha256$" + ITERACIONES_PBKDF2 + "$" + Base64.getEncoder().encodeToString(salt) + "$"
+		return formato + "$" + ITERACIONES_PBKDF2 + "$" + Base64.getEncoder().encodeToString(salt) + "$"
 				+ Base64.getEncoder().encodeToString(hash);
 	}
 
 	public static boolean verificarPassword(String password, String hashGuardado) {
 		if (hashGuardado == null)
 			return false;
-		if (!hashGuardado.startsWith("pbkdf2-sha256$")) {
+		if (!esHashModerno(hashGuardado)) {
 			return MessageDigest.isEqual(hashSHA256(password).getBytes(StandardCharsets.US_ASCII),
 					hashGuardado.getBytes(StandardCharsets.US_ASCII));
 		}
 
 		try {
 			String[] partes = hashGuardado.split("\\$", -1);
-			if (partes.length != 4 || !"pbkdf2-sha256".equals(partes[0]))
+			if (partes.length != 4 || !esFormatoHashReconocido(partes[0]))
 				return false;
 			int iteraciones = Integer.parseInt(partes[1]);
 			validarIteraciones(iteraciones);
@@ -63,7 +74,24 @@ public final class Cifrador {
 	}
 
 	public static boolean esHashModerno(String hashGuardado) {
-		return hashGuardado != null && hashGuardado.startsWith("pbkdf2-sha256$");
+		if (hashGuardado == null) {
+			return false;
+		}
+		String formato = hashGuardado.split("\\$", 2)[0];
+		return esFormatoHashReconocido(formato);
+	}
+
+	public static boolean esHashConEspaciosExactos(String hashGuardado) {
+		return hashGuardado != null && hashGuardado.startsWith(FORMATO_HASH_EXACTO + "$");
+	}
+
+	public static boolean esHashConEspaciosNormalizados(String hashGuardado) {
+		return hashGuardado != null && hashGuardado.startsWith(FORMATO_HASH_NORMALIZADO + "$");
+	}
+
+	private static boolean esFormatoHashReconocido(String formato) {
+		return FORMATO_HASH_ANTIGUO.equals(formato) || FORMATO_HASH_EXACTO.equals(formato)
+				|| FORMATO_HASH_NORMALIZADO.equals(formato);
 	}
 
 	public static byte[] derivarClave(String password, byte[] salt, int iteraciones) throws Exception {

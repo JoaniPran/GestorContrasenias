@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Consumer;
 
 public final class AlmacenContrasenas {
@@ -20,24 +21,36 @@ public final class AlmacenContrasenas {
 	private static final int MAXIMO_REGISTROS = 100_000;
 
 	private final Path archivoDatosUsuario;
+	private final Path archivoLegacyUsuario;
+	private final Path archivoUsuarios;
+	private final String usuarioLogueado;
 	private final String claveMaestra;
 	private byte[] salV2;
 	private byte[] claveDerivada;
 
 	public AlmacenContrasenas(String usuarioLogueado, String claveMaestra) {
-		String usuarioLimpio = usuarioLogueado.toLowerCase().replaceAll("[^a-zA-Z0-9_]", "");
-		this.archivoDatosUsuario = Paths.get("contrasenas_" + usuarioLimpio + ".csv");
+		this(usuarioLogueado, claveMaestra, Paths.get("."));
+	}
+
+	AlmacenContrasenas(String usuarioLogueado, String claveMaestra, Path directorioDatos) {
+		this.usuarioLogueado = usuarioLogueado.trim().toLowerCase(Locale.ROOT);
+		String usuarioCodificado = Base64.getUrlEncoder().withoutPadding()
+				.encodeToString(this.usuarioLogueado.getBytes(StandardCharsets.UTF_8));
+		String usuarioLegacy = this.usuarioLogueado.replaceAll("[^a-zA-Z0-9_]", "");
+		this.archivoDatosUsuario = directorioDatos.resolve("contrasenas_usuario_" + usuarioCodificado + ".csv");
+		this.archivoLegacyUsuario = directorioDatos.resolve("contrasenas_" + usuarioLegacy + ".csv");
+		this.archivoUsuarios = directorioDatos.resolve("usuarios.csv");
 		this.claveMaestra = claveMaestra;
 	}
 
 	public void guardar(List<RegistroContrasena> registros) throws Exception {
+		if (registros.size() > MAXIMO_REGISTROS) {
+			throw new IOException("La bóveda contiene demasiados registros");
+		}
 		if (salV2 == null)
 			salV2 = Cifrador.generarBytesAleatorios(LONGITUD_SAL);
 		if (claveDerivada == null) {
 			claveDerivada = Cifrador.derivarClave(claveMaestra, salV2, Cifrador.ITERACIONES_PBKDF2);
-		}
-		if (registros.size() > MAXIMO_REGISTROS) {
-			throw new IOException("La bóveda contiene demasiados registros");
 		}
 
 		final int cantidad = registros.size();
@@ -65,30 +78,51 @@ public final class AlmacenContrasenas {
 	}
 
 	public void cargar(Consumer<RegistroContrasena> alCargarRegistro) throws IOException {
-		if (!Files.exists(archivoDatosUsuario))
-			return;
-		ArchivoPrivado.restringirPermisos(archivoDatosUsuario);
-		List<String> lineas = Files.readAllLines(archivoDatosUsuario, StandardCharsets.UTF_8);
-		if (!lineas.isEmpty() && lineas.get(0).startsWith(MARCADOR_V2 + ";")) {
-			cargarFormatoV2(lineas, alCargarRegistro);
+		if (Files.exists(archivoDatosUsuario)) {
+			ArchivoPrivado.restringirPermisos(archivoDatosUsuario);
+			cargarArchivo(Files.readAllLines(archivoDatosUsuario, StandardCharsets.UTF_8), alCargarRegistro);
 			return;
 		}
-
-		List<RegistroContrasena> registros = cargarFormatoLegacy(lineas);
-		salV2 = Cifrador.generarBytesAleatorios(LONGITUD_SAL);
-		claveDerivada = null;
+		if (!Files.exists(archivoLegacyUsuario)) {
+			return;
+		}
+		if (AlmacenUsuarios.rutaBovedaLegacyCompartida(usuarioLogueado, archivoUsuarios)) {
+			throw new IOException("La bóveda antigua coincide con la de otro usuario. "
+					+ "El archivo original se conservó y no se migró por seguridad.");
+		}
+		ArchivoPrivado.restringirPermisos(archivoLegacyUsuario);
+		List<String> lineas = Files.readAllLines(archivoLegacyUsuario, StandardCharsets.UTF_8);
+		List<RegistroContrasena> registros = cargarRegistros(lineas);
 		try {
 			guardar(registros);
 		} catch (Exception e) {
-			throw new IOException(
-					"No se pudo migrar la bóveda al formato cifrado actual; el archivo original se conservó.", e);
+			throw new IOException("No se pudo migrar la bóveda al archivo único del usuario. "
+					+ "El archivo original se conservó.", e);
 		}
-		for (RegistroContrasena registro : registros)
+		for (RegistroContrasena registro : registros) {
 			alCargarRegistro.accept(registro);
+		}
 	}
 
-	private void cargarFormatoV2(List<String> lineas, Consumer<RegistroContrasena> alCargarRegistro)
+	private void cargarArchivo(List<String> lineas, Consumer<RegistroContrasena> alCargarRegistro)
 			throws IOException {
+		List<RegistroContrasena> registros = cargarRegistros(lineas);
+		for (RegistroContrasena registro : registros) {
+			alCargarRegistro.accept(registro);
+		}
+	}
+
+	private List<RegistroContrasena> cargarRegistros(List<String> lineas) throws IOException {
+		if (!lineas.isEmpty() && lineas.get(0).startsWith(MARCADOR_V2 + ";")) {
+			return cargarFormatoV2(lineas);
+		}
+		List<RegistroContrasena> registros = cargarFormatoLegacy(lineas);
+		salV2 = Cifrador.generarBytesAleatorios(LONGITUD_SAL);
+		claveDerivada = null;
+		return registros;
+	}
+
+	private List<RegistroContrasena> cargarFormatoV2(List<String> lineas) throws IOException {
 		try {
 			String[] cabecera = lineas.get(0).split(";", -1);
 			if (cabecera.length != 4 || !MARCADOR_V2.equals(cabecera[0])) {
@@ -117,8 +151,7 @@ public final class AlmacenContrasenas {
 				String claro = Cifrador.desencriptarGcm(cifrado, claveDerivada, nonce, crearAad(cantidad, indice));
 				registros.add(decodificarRegistro(claro));
 			}
-			for (RegistroContrasena registro : registros)
-				alCargarRegistro.accept(registro);
+			return registros;
 		} catch (IOException e) {
 			throw e;
 		} catch (Exception e) {

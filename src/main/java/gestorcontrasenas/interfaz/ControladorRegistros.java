@@ -172,7 +172,7 @@ public final class ControladorRegistros {
 	private RegistroContrasena leerFormulario() {
 		String cuentaActual = cuenta.getText().trim();
 		String usuarioActual = usuario.getText().trim();
-		String passwordActual = new String(contrasena.getPassword()).trim();
+		String passwordActual = new String(contrasena.getPassword());
 		if (cuentaActual.isEmpty() || usuarioActual.isEmpty() || passwordActual.isEmpty()) {
 			presentador.mostrar("Por favor completa todos los campos.",
 					"Campos Incompletos", JOptionPane.WARNING_MESSAGE);

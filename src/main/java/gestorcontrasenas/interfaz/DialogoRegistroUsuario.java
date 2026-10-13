@@ -95,8 +95,8 @@ public class DialogoRegistroUsuario extends JDialog {
 
 	private void registrarUsuario() {
 		String usuario = txtUsuario.getText().trim();
-		String contrasena = new String(txtContrasena.getPassword()).trim();
-		String confirmarContrasena = new String(txtConfirmarContrasena.getPassword()).trim();
+		String contrasena = new String(txtContrasena.getPassword());
+		String confirmarContrasena = new String(txtConfirmarContrasena.getPassword());
 
 		if (usuario.isEmpty() || contrasena.isEmpty() || confirmarContrasena.isEmpty()) {
 			mostrarError("Completa todos los campos.", "Campos incompletos");

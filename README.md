@@ -10,8 +10,9 @@
 - Los archivos se escriben de forma atómica y, en sistemas POSIX, se restringen al propietario (`rw-------`).
 - En Windows se excluye la ventana principal de las capturas compatibles; si no se puede activar esa protección, las contraseñas permanecen ocultas. En Linux, las contraseñas reveladas se vuelven a ocultar al perder el foco. Estas medidas dependen del sistema y no impiden todos los métodos de captura.
 - En el siguiente inicio de sesión, las cuentas y bóvedas del formato anterior se migran automáticamente. La migración conserva el formato original si falla antes de completarse.
+- Cada bóveda usa ahora un nombre de archivo codificado y único por usuario. Los archivos antiguos se migran al iniciar sesión si el nombre heredado no está compartido; si es ambiguo, la aplicación bloquea esa bóveda y conserva el original para evitar mezclar cuentas.
 
-Antes de actualizar, cierra el programa y haz una copia de seguridad de `usuarios.csv` y de cada archivo `contrasenas_<usuario>.csv`. No borres esos archivos: contienen las cuentas y bóvedas.
+Antes de actualizar, cierra el programa y haz una copia de seguridad de `usuarios.csv`, `preferencias.properties` y todos los archivos `contrasenas_*.csv`. No borres esos archivos: contienen las cuentas, preferencias y bóvedas.
 
 Los datos se guardan en el directorio de trabajo desde el que se ejecuta la aplicación. La protección de archivos depende también de la seguridad de la cuenta y del dispositivo donde se ejecuta Seguseña.
 
@@ -42,7 +43,7 @@ java -jar target/segusena-1.0.0.jar
 
 Al iniciar, crea una cuenta con **Registrar** (usuario y contraseña maestra de al menos 12 caracteres), luego inicia sesión. Puedes marcar **Recordar usuario** para completar el nombre de usuario en próximos inicios; la contraseña maestra nunca se recuerda. Las contraseñas de tus servicios se agregan desde el formulario principal; puedes buscarlas, editarlas y eliminarlas desde allí. El botón **Importar Google** permite seleccionar o arrastrar un CSV de Google Password Manager; valida las columnas `name`, `url`, `username`, `password` y `note`, importa nombre, usuario y contraseña, y reemplaza la contraseña cuando ya existe el mismo servicio y usuario. El icono de engranaje permite cambiar el tema claro/oscuro, que se guarda por usuario.
 
-Los archivos `usuarios.csv`, `contrasenas_<usuario>.csv` y `preferencias.properties` se crean en el directorio desde el que se ejecuta la aplicación. No los compartas; haz copias de seguridad privadas si necesitas conservar tus cuentas y bóvedas.
+Los archivos `usuarios.csv`, `contrasenas_*.csv` y `preferencias.properties` se crean en el directorio desde el que se ejecuta la aplicación. No los compartas; haz copias de seguridad privadas si necesitas conservar tus cuentas y bóvedas.
 
 ## Generar una distribución portable en Linux
 
@@ -70,7 +71,7 @@ cd portable/Segusena
 ./bin/Segusena
 ```
 
-Seguseña guarda sus archivos en el directorio de trabajo. Para que los datos viajen con la distribución, copia `usuarios.csv` y `contrasenas_<usuario>.csv` dentro de `portable/Segusena/` **antes del primer inicio**. No compartas la distribución si contiene esos archivos: son privados. La carpeta `portable/` está excluida de Git.
+Seguseña guarda sus archivos en el directorio de trabajo. Para que los datos viajen con la distribución, copia `usuarios.csv`, `preferencias.properties` y todos los archivos `contrasenas_*.csv` dentro de `portable/Segusena/` **antes del primer inicio**. No compartas la distribución si contiene esos archivos: son privados. La carpeta `portable/` está excluida de Git.
 
 Este procedimiento genera una aplicación portable para Linux y la arquitectura del equipo donde se ejecuta.
 
@@ -82,6 +83,6 @@ En Windows, instala Maven y un JDK 16 o posterior que incluya `jpackage`. Abre P
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1
 ```
 
-El paquete se genera en `portable\Segusena\` e incluye las bibliotecas de la aplicación y su propio runtime de Java. Para iniciarlo sin mostrar una consola, abre `portable\Segusena\Segusena.vbs` o `Segusena.exe`; el generador ya no crea un lanzador `.bat`. Si quieres conservar datos existentes, copia `usuarios.csv` y `contrasenas_<usuario>.csv` a `portable\Segusena\` antes del primer inicio. No compartas esos archivos: son privados.
+El paquete se genera en `portable\Segusena\` e incluye las bibliotecas de la aplicación y su propio runtime de Java. Para iniciarlo sin mostrar una consola, abre `portable\Segusena\Segusena.vbs` o `Segusena.exe`; el generador ya no crea un lanzador `.bat`. Si quieres conservar datos existentes, copia `usuarios.csv`, `preferencias.properties` y todos los archivos `contrasenas_*.csv` a `portable\Segusena\` antes del primer inicio. No compartas esos archivos: son privados.
 
 El paquete de Windows debe generarse en Windows (y para la arquitectura de Windows de destino); `jpackage` no crea el ejecutable de Windows desde Linux. La aplicación también puede ejecutarse desde el JAR con Java instalado, usando `ejecutar-windows.bat`.

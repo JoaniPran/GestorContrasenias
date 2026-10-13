@@ -16,7 +16,10 @@ public final class AlmacenUsuarios {
 	}
 
 	public static boolean existeUsuario(String user) {
-		Path archivo = Paths.get(ARCHIVO_USUARIOS);
+		return existeUsuario(user, Paths.get(ARCHIVO_USUARIOS));
+	}
+
+	static boolean existeUsuario(String user, Path archivo) {
 		if (!Files.exists(archivo))
 			return false;
 		try {
@@ -36,17 +39,21 @@ public final class AlmacenUsuarios {
 	}
 
 	public static boolean registrarUsuario(String user, String pass) {
+		return registrarUsuario(user, pass, Paths.get(ARCHIVO_USUARIOS));
+	}
+
+	static boolean registrarUsuario(String user, String pass, Path archivo) {
 		String usuario = user.trim();
-		String contrasena = pass.trim();
-		if (!esNombreUsuarioValido(usuario) || contrasena.length() < 12 || existeUsuario(usuario)) {
+		String contrasena = pass;
+		if (!esNombreUsuarioValido(usuario) || contrasena.length() < 12 || existeUsuario(usuario, archivo)) {
 			return false;
 		}
 		try {
-			List<String> lineas = Files.exists(Paths.get(ARCHIVO_USUARIOS))
-					? Files.readAllLines(Paths.get(ARCHIVO_USUARIOS), StandardCharsets.UTF_8)
+			List<String> lineas = Files.exists(archivo)
+					? Files.readAllLines(archivo, StandardCharsets.UTF_8)
 					: new ArrayList<>();
 			lineas.add(usuario + ";" + Cifrador.crearHashPassword(contrasena));
-			guardarLineas(lineas);
+			guardarLineas(lineas, archivo);
 			return true;
 		} catch (Exception e) {
 			return false;
@@ -54,40 +61,87 @@ public final class AlmacenUsuarios {
 	}
 
 	public static boolean validarCredenciales(String user, String pass) {
-		Path archivo = Paths.get(ARCHIVO_USUARIOS);
+		return autenticar(user, pass, Paths.get(ARCHIVO_USUARIOS)) != null;
+	}
+
+	static boolean validarCredenciales(String user, String pass, Path archivo) {
+		return autenticar(user, pass, archivo) != null;
+	}
+
+	public static ResultadoAutenticacion autenticar(String user, String pass) {
+		return autenticar(user, pass, Paths.get(ARCHIVO_USUARIOS));
+	}
+
+	static ResultadoAutenticacion autenticar(String user, String pass, Path archivo) {
 		if (!Files.exists(archivo))
-			return false;
-		String contrasena = pass.trim();
+			return null;
 		try {
 			ArchivoPrivado.restringirPermisos(archivo);
 			List<String> lineas = Files.readAllLines(archivo, StandardCharsets.UTF_8);
 			for (int i = 0; i < lineas.size(); i++) {
 				String[] partes = lineas.get(i).split(";", 2);
 				if (partes.length >= 2) {
-					if (partes[0].equalsIgnoreCase(user.trim()) && Cifrador.verificarPassword(contrasena, partes[1])) {
-						if (!Cifrador.esHashModerno(partes[1])) {
+					String contrasena = Cifrador.esHashConEspaciosExactos(partes[1]) ? pass : pass.trim();
+					if (partes[0].equalsIgnoreCase(user.trim())
+							&& Cifrador.verificarPassword(contrasena, partes[1])) {
+						if (!Cifrador.esHashConEspaciosExactos(partes[1])
+								&& !Cifrador.esHashConEspaciosNormalizados(partes[1])) {
 							try {
-								lineas.set(i, partes[0] + ";" + Cifrador.crearHashPassword(contrasena));
-								guardarLineas(lineas);
+								lineas.set(i, partes[0] + ";" + Cifrador.crearHashPasswordNormalizado(contrasena));
+								guardarLineas(lineas, archivo);
 							} catch (Exception ignored) {
 								// Un fallo al migrar el hash no debe bloquear el acceso al usuario legítimo.
 							}
 						}
-						return true;
+						return new ResultadoAutenticacion(contrasena);
 					}
 				}
 			}
 		} catch (Exception ignored) {
 		}
+		return null;
+	}
+
+	static boolean rutaBovedaLegacyCompartida(String usuario, Path archivoUsuarios) throws IOException {
+		if (!Files.exists(archivoUsuarios)) {
+			return false;
+		}
+		String rutaLegada = normalizarNombreArchivoLegacy(usuario);
+		int usuariosConMismaRuta = 0;
+		for (String linea : Files.readAllLines(archivoUsuarios, StandardCharsets.UTF_8)) {
+			String[] partes = linea.split(";", 2);
+			if (partes.length == 2 && normalizarNombreArchivoLegacy(partes[0]).equals(rutaLegada)) {
+				usuariosConMismaRuta++;
+				if (usuariosConMismaRuta > 1) {
+					return true;
+				}
+			}
+		}
 		return false;
 	}
 
-	private static void guardarLineas(List<String> lineas) throws IOException {
-		ArchivoPrivado.guardarAtomico(Paths.get(ARCHIVO_USUARIOS), writer -> {
+	private static String normalizarNombreArchivoLegacy(String usuario) {
+		return usuario.trim().toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-zA-Z0-9_]", "");
+	}
+
+	private static void guardarLineas(List<String> lineas, Path archivo) throws IOException {
+		ArchivoPrivado.guardarAtomico(archivo, writer -> {
 			for (String linea : lineas) {
 				writer.write(linea);
 				writer.newLine();
 			}
 		});
+	}
+
+	public static final class ResultadoAutenticacion {
+		private final String claveMaestra;
+
+		private ResultadoAutenticacion(String claveMaestra) {
+			this.claveMaestra = claveMaestra;
+		}
+
+		public String getClaveMaestra() {
+			return claveMaestra;
+		}
 	}
 }

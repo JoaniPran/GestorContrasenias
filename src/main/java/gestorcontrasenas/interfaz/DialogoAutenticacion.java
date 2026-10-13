@@ -2,6 +2,7 @@ package gestorcontrasenas.interfaz;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import gestorcontrasenas.datos.AlmacenUsuarios;
+import gestorcontrasenas.datos.AlmacenUsuarios.ResultadoAutenticacion;
 import javax.swing.JDialog;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -98,8 +99,9 @@ public class DialogoAutenticacion extends JDialog {
 
 		btnLogin.addActionListener(e -> {
 			String u = txtU.getText().trim();
-			String p = new String(txtP.getPassword()).trim();
-			if (AlmacenUsuarios.validarCredenciales(u, p)) {
+			String p = new String(txtP.getPassword());
+			ResultadoAutenticacion autenticacion = AlmacenUsuarios.autenticar(u, p);
+			if (autenticacion != null) {
 				try {
 					AlmacenPreferencias.guardarUsuarioRecordado(recordarUsuario.isSelected() ? u : "");
 				} catch (IOException ex) {
@@ -107,7 +109,7 @@ public class DialogoAutenticacion extends JDialog {
 							+ ex.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
 				}
 				usuarioAutenticado = u;
-				claveMaestra = p;
+				claveMaestra = autenticacion.getClaveMaestra();
 				exito = true;
 				dispose();
 			} else {

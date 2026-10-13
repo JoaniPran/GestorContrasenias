@@ -28,6 +28,18 @@ class ControladorRegistrosTest {
 	}
 
 	@Test
+	void guardarRegistroConservaLosEspaciosDeLaContrasena() {
+		Fixture fixture = new Fixture();
+		fixture.cuenta.setText("Correo");
+		fixture.usuario.setText("persona@example.com");
+		fixture.contrasena.setText("  secreto  ");
+
+		fixture.controlador.guardarNuevoRegistro();
+
+		assertEquals("  secreto  ", fixture.modelo.getValueAt(0, 2));
+	}
+
+	@Test
 	void guardarRegistroDuplicadoNoModificaLaTablaNiPersiste() {
 		Fixture fixture = new Fixture();
 		fixture.modelo.addRow(new Object[]{"Correo", "persona@example.com", "anterior"});
