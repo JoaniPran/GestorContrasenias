@@ -8,39 +8,34 @@ import gestorcontrasenas.datos.AlmacenContrasenas;
 import gestorcontrasenas.datos.ImportadorContrasenasGoogle;
 import gestorcontrasenas.datos.AlmacenPreferencias;
 import gestorcontrasenas.interfaz.BotonEstilizado;
+import gestorcontrasenas.interfaz.ColumnaContrasena;
+import gestorcontrasenas.interfaz.ControladorEventosTabla;
+import gestorcontrasenas.interfaz.ControladorRegistros;
 import gestorcontrasenas.interfaz.DialogoAutenticacion;
+import gestorcontrasenas.interfaz.DialogoConfiguracion;
+import gestorcontrasenas.interfaz.DialogoImportacionGoogle;
+import gestorcontrasenas.interfaz.EstiloTablaCredenciales;
 import gestorcontrasenas.interfaz.MenusContextuales;
-import gestorcontrasenas.interfaz.PanelRedondeado;
-import gestorcontrasenas.interfaz.TableRowTransferHandler;
+import gestorcontrasenas.interfaz.ModeloCredenciales;
+import gestorcontrasenas.interfaz.TemaColores;
+import gestorcontrasenas.interfaz.VistaGestorContrasenas;
 import gestorcontrasenas.modelo.RegistroContrasena;
-import gestorcontrasenas.seguridad.ProteccionCapturasWindows;
+import gestorcontrasenas.servicio.ServicioCredenciales;
+import gestorcontrasenas.servicio.ServicioCredenciales.ResultadoImportacion;
+import gestorcontrasenas.seguridad.ProtectorVentana;
 import java.awt.*;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableRowSorter;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class GestorContrasenas extends JFrame {
-
 	// Modo y Colores (Estilo Web Slate/Zinc)
 	private boolean modoOscuro = true;
 
@@ -57,24 +52,22 @@ public class GestorContrasenas extends JFrame {
 	private JTextField txtBuscar;
 	private JPasswordField txtPassword;
 	private JTable tabla;
-	private DefaultTableModel modeloTabla;
-	private TableRowSorter<DefaultTableModel> ordenadorTabla;
-	private PanelRedondeado panelFormulario;
-	private JLabel lblTitulo, lblUserBadge, lblCuenta, lblUsuario, lblPassword, lblBuscar;
+	private ModeloCredenciales modeloTabla;
+	private TableRowSorter<ModeloCredenciales> ordenadorTabla;
+	private JLabel lblEstadoBoveda, lblDetalleEstado, lblContadorCredenciales;
 	private JButton btnConfiguracion;
 	private BotonEstilizado btnImportarGoogle;
 	private BotonEstilizado btnCerrarSesion;
 	private JScrollPane scrollPane;
+	private VistaGestorContrasenas vista;
 
 	private final AlmacenContrasenas almacenContrasenas;
+	private final ServicioCredenciales servicioCredenciales = new ServicioCredenciales();
 	private final String usuarioLogueado;
 	private boolean confirmarAntesDeMostrarContrasena;
-	private boolean puedeMostrarContrasenas = true;
+	private ProtectorVentana protectorVentana;
 
-	private final List<JComponent> componentesEstilizados = new ArrayList<>();
 	private final Set<String> cuentasConPasswordVisible = new HashSet<>();
-	private final Set<String> serviciosExpandidos = new HashSet<>();
-	private final Map<String, Integer> cantidadPorServicio = new HashMap<>();
 	private boolean almacenamientoDisponible = true;
 
 	public GestorContrasenas(String usuarioLogueado, String claveMaestra) {
@@ -86,240 +79,73 @@ public class GestorContrasenas extends JFrame {
 				.cargarConfirmacionMostrarContrasena(usuarioLogueado);
 		actualizarColoresTema();
 		construirInterfaz(usuarioLogueado);
-		aplicarColoresInterfaz();
+		vista.aplicarColoresInterfaz(colorBg, colorCard, colorInput, colorTextPrimary, colorTextMuted, colorBorder,
+				colorResaltado, modoOscuro, almacenamientoDisponible, this::estilarTabla);
 		cargarDatosGuardados();
-		configurarProteccionCapturas();
-	}
-
-	private void configurarProteccionCapturas() {
-		addWindowListener(new WindowAdapter() {
-			@Override
-			public void windowClosing(WindowEvent e) {
-				MenusContextuales.limpiarContrasenaPendienteDelPortapapeles();
+		protectorVentana = new ProtectorVentana(this, tabla, () -> {
+			if (!cuentasConPasswordVisible.isEmpty()) {
+				cuentasConPasswordVisible.clear();
+				tabla.repaint();
 			}
-		});
-
-		String sistemaOperativo = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
-		if (sistemaOperativo.contains("win")) {
-			puedeMostrarContrasenas = false;
-			addWindowListener(new WindowAdapter() {
-				@Override
-				public void windowOpened(WindowEvent e) {
-					try {
-						ProteccionCapturasWindows.excluirVentana(GestorContrasenas.this);
-						puedeMostrarContrasenas = true;
-					} catch (RuntimeException | LinkageError error) {
-						cuentasConPasswordVisible.clear();
-						tabla.repaint();
-						String detalle = error.getClass().getSimpleName()
-								+ (error.getMessage() == null ? "" : ": " + error.getMessage());
-						String instruccion = error instanceof NoClassDefFoundError
-								? "\nReconstruye con «mvn clean package» y ejecuta el JAR generado o vuelve a generar "
-										+ "el paquete portable de Windows."
-								: "";
-						JOptionPane.showMessageDialog(GestorContrasenas.this,
-								"No se pudo activar la exclusión de la ventana de las capturas de Windows. "
-										+ "Las contraseñas permanecerán ocultas."
-										+ "\nDetalle: " + detalle + instruccion,
-								"Protección de capturas no disponible", JOptionPane.WARNING_MESSAGE);
-					}
-				}
-			});
-		}
-
-		addWindowFocusListener(new WindowAdapter() {
-			@Override
-			public void windowLostFocus(WindowEvent e) {
-				if (tabla.isEditing()) {
-					tabla.getCellEditor().cancelCellEditing();
-				}
-				if (!cuentasConPasswordVisible.isEmpty()) {
-					cuentasConPasswordVisible.clear();
-					tabla.repaint();
-				}
-			}
-		});
+		}, mensaje -> JOptionPane.showMessageDialog(this, mensaje, "Protección de capturas no disponible",
+				JOptionPane.WARNING_MESSAGE));
+		protectorVentana.configurarProteccionCapturas();
 	}
 
 	private void construirInterfaz(String usuarioLogueado) {
-		// Ventana nativa controlada por el Sistema Operativo
-		setTitle("Gestor de Contraseñas - " + usuarioLogueado);
-		setSize(780, 580);
-		setMinimumSize(new Dimension(680, 480));
+		setTitle("Seguseña - " + usuarioLogueado);
+		setSize(980, 700);
+		setMinimumSize(new Dimension(740, 580));
 		setResizable(true);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
-
-		JPanel panelPrincipal = new JPanel(new BorderLayout(12, 12));
-		panelPrincipal.setBorder(new EmptyBorder(10, 16, 14, 16));
-		setContentPane(panelPrincipal);
-
-		// --- HEADER DE APLICACIÓN ---
-		JPanel panelHeader = new JPanel(new BorderLayout());
-		panelHeader.setOpaque(false);
-
-		lblTitulo = new JLabel("Gestor de Contraseñas");
-		lblTitulo.setIcon(new FlatSVGIcon("icons/shield.svg", 20, 20));
-		lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-
-		lblUserBadge = new JLabel(" " + usuarioLogueado + " ");
-		lblUserBadge.setIcon(new FlatSVGIcon("icons/user.svg", 14, 14));
-		lblUserBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
-		lblUserBadge.setOpaque(true);
-		lblUserBadge.setForeground(Color.WHITE);
-
-		JPanel panelBusqueda = new JPanel(new BorderLayout(8, 0));
-		panelBusqueda.setOpaque(false);
-		lblBuscar = crearEtiqueta("Buscar servicio o correo:");
-		lblBuscar.setIcon(new FlatSVGIcon("icons/search.svg", 14, 14));
-		lblBuscar.setForeground(Color.WHITE);
-	
-		btnConfiguracion = new JButton();
-		btnConfiguracion.setIcon(crearIconoEncabezado("icons/settings.svg", 16));
-		btnConfiguracion.setToolTipText("Configuración");
-		btnConfiguracion.setPreferredSize(new Dimension(36, 36));
-		btnConfiguracion.setFocusable(false);
-		btnConfiguracion.setBorderPainted(false);
-		btnConfiguracion.setContentAreaFilled(false);
-		btnConfiguracion.setOpaque(false);
-		btnConfiguracion.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-		btnCerrarSesion = new BotonEstilizado("Salir", COLOR_BOTON, COLOR_BOTON_HOVER, 12);
-		btnCerrarSesion.setIcon(crearIconoEncabezado("icons/external-link.svg", 14));
-		btnCerrarSesion.setFocusable(true);
-
-
-		JPanel panelAccionesHeader = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-		panelAccionesHeader.setOpaque(false);
-		panelAccionesHeader.add(lblUserBadge);
-		panelAccionesHeader.add(btnCerrarSesion);
-		panelAccionesHeader.add(btnConfiguracion);
-
-		panelHeader.add(lblTitulo, BorderLayout.WEST);
-		panelHeader.add(panelAccionesHeader, BorderLayout.EAST);
-		panelPrincipal.add(panelHeader, BorderLayout.NORTH);
-
-		// --- FORMULARIO Y TABLA ---
-		JPanel panelContenido = new JPanel(new BorderLayout(12, 12));
-		panelContenido.setOpaque(false);
-
-		panelFormulario = new PanelRedondeado(14, colorCard, colorBorder);
-		panelFormulario.setLayout(new GridBagLayout());
-		panelFormulario.setBorder(new EmptyBorder(12, 14, 12, 14));
-
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.insets = new Insets(4, 4, 4, 4);
-
-		lblCuenta = crearEtiqueta("Servicio / App:");
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		panelFormulario.add(lblCuenta, gbc);
-		gbc.gridx = 1;
-		gbc.weightx = 1.0;
-		txtCuenta = crearCampoTexto();
-		panelFormulario.add(txtCuenta, gbc);
-
-		lblUsuario = crearEtiqueta("Usuario / Email:");
-		gbc.gridx = 0;
-		gbc.gridy = 1;
-		gbc.weightx = 0;
-		panelFormulario.add(lblUsuario, gbc);
-		gbc.gridx = 1;
-		gbc.weightx = 1.0;
-		txtUsuario = crearCampoTexto();
-		panelFormulario.add(txtUsuario, gbc);
-
-		lblPassword = crearEtiqueta("Contraseña:");
-		gbc.gridx = 0;
-		gbc.gridy = 2;
-		gbc.weightx = 0;
-		panelFormulario.add(lblPassword, gbc);
-		gbc.gridx = 1;
-		gbc.weightx = 1.0;
-		txtPassword = crearCampoPassword();
-		panelFormulario.add(txtPassword, gbc);
-
-		// --- BOTONES FORMULARIO ---
-		BotonEstilizado btnGuardar = new BotonEstilizado("Guardar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
-		btnGuardar.setIcon(new FlatSVGIcon("icons/save.svg", 16, 16));
-
-		BotonEstilizado btnActualizar = new BotonEstilizado("Editar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
-		btnActualizar.setIcon(new FlatSVGIcon("icons/edit.svg", 16, 16));
-
-		BotonEstilizado btnEliminar = new BotonEstilizado("Eliminar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
-		btnEliminar.setIcon(new FlatSVGIcon("icons/trash.svg", 16, 16));
-
-		BotonEstilizado btnLimpiar = new BotonEstilizado("Limpiar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
-		btnLimpiar.setIcon(new FlatSVGIcon("icons/delete.svg", 16, 16));
-
-		btnImportarGoogle = new BotonEstilizado("Importar Google", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
-		btnImportarGoogle.setIcon(new FlatSVGIcon("icons/upload.svg", 16, 16));
-
-		JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-		panelBotones.setOpaque(false);
-		panelBotones.add(btnGuardar);
-		panelBotones.add(btnActualizar);
-		panelBotones.add(btnEliminar);
-		panelBotones.add(btnLimpiar);
-		panelBotones.add(btnImportarGoogle);
-
-		gbc.gridx = 0;
-		gbc.gridy = 3;
-		gbc.gridwidth = 2;
-		gbc.insets = new Insets(8, 4, 2, 4);
-		panelFormulario.add(panelBotones, gbc);
-
-		// --- BÚSQUEDA Y TABLA ---
-		JPanel panelCentro = new JPanel(new BorderLayout(10, 10));
-		panelCentro.setOpaque(false);
-		panelCentro.add(panelFormulario, BorderLayout.NORTH);
-
-		String[] columnas = {"Servicio / Aplicación", "Usuario / Email", "Contraseña"};
-		modeloTabla = new DefaultTableModel(columnas, 0) {
-			@Override
-			public boolean isCellEditable(int row, int column) {
-				return column == 2 && (tabla == null || tabla.getSelectedRowCount() <= 1)
-						&& !esFilaCabecera(row) && !esEncabezadoContraido(row);
-			}
-		};
-
-		tabla = new JTable(modeloTabla);
-		tabla.setDragEnabled(true);
-		tabla.setDropMode(DropMode.INSERT_ROWS);
-		tabla.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-		tabla.setTransferHandler(new TableRowTransferHandler(tabla, this::reordenarGrupoDesdeVista));
-
-		ordenadorTabla = new TableRowSorter<>(modeloTabla);
-		for (int columna = 0; columna < modeloTabla.getColumnCount(); columna++) {
-			ordenadorTabla.setSortable(columna, false);
-		}
-		tabla.setRowSorter(ordenadorTabla);
-
-		txtBuscar = crearCampoTexto();
-		txtBuscar.setToolTipText("Filtra por servicio/aplicación o correo electrónico");
-		panelBusqueda.add(lblBuscar, BorderLayout.WEST);
-		panelBusqueda.add(txtBuscar, BorderLayout.CENTER);
-
-		JPanel panelTabla = new JPanel(new BorderLayout(8, 8));
-		panelTabla.setOpaque(false);
-		panelTabla.add(panelBusqueda, BorderLayout.NORTH);
-
-		scrollPane = new JScrollPane(tabla);
-		panelTabla.add(scrollPane, BorderLayout.CENTER);
-		panelCentro.add(panelTabla, BorderLayout.CENTER);
-
-		panelContenido.add(panelCentro, BorderLayout.CENTER);
-		panelPrincipal.add(panelContenido, BorderLayout.CENTER);
-
-		configurarEventos(btnGuardar, btnActualizar, btnEliminar, btnLimpiar, btnImportarGoogle,
-				btnConfiguracion, btnCerrarSesion);
+		FlatSVGIcon iconoAplicacion = new FlatSVGIcon("icons/shield.svg", 32, 32);
+		iconoAplicacion.setColorFilter(new FlatSVGIcon.ColorFilter(color -> Color.WHITE.equals(color)
+				? COLOR_PRIMARY : color));
+		setIconImage(iconoAplicacion.getImage());
+		vista = new VistaGestorContrasenas(usuarioLogueado, colorCard, colorBorder,
+				colorResaltado, this::crearIconoEncabezado, this::reordenarGrupoDesdeVista);
+		setContentPane(vista.construir());
+		modeloTabla = vista.getModelo();
+		tabla = vista.getTabla();
+		ordenadorTabla = vista.getOrdenador();
+		lblEstadoBoveda = vista.getLblEstadoBoveda();
+		lblDetalleEstado = vista.getLblDetalleEstado();
+		lblContadorCredenciales = vista.getLblContadorCredenciales();
+		btnConfiguracion = vista.getBtnConfiguracion();
+		btnImportarGoogle = vista.getBtnImportarGoogle();
+		btnCerrarSesion = vista.getBtnCerrarSesion();
+		txtCuenta = vista.getTxtCuenta();
+		txtUsuario = vista.getTxtUsuario();
+		txtBuscar = vista.getTxtBuscar();
+		txtPassword = vista.getTxtPassword();
+		scrollPane = vista.getScrollPane();
+		modeloTabla.addTableModelListener(e -> actualizarResumenBoveda());
+		actualizarResumenBoveda();
+		configurarEventos(vista.getBtnGuardar(), vista.getBtnActualizar(), vista.getBtnEliminar(),
+				vista.getBtnLimpiar(), btnImportarGoogle, btnConfiguracion, btnCerrarSesion);
 	}
 
 	private void configurarEventos(BotonEstilizado btnGuardar, BotonEstilizado btnActualizar,
 			BotonEstilizado btnEliminar, BotonEstilizado btnLimpiar, BotonEstilizado btnImportarGoogle,
 			JButton btnConfiguracion,
 			BotonEstilizado btnCerrarSesion) {
+		ControladorRegistros controlador = new ControladorRegistros(tabla, modeloTabla, txtCuenta, txtUsuario,
+				txtPassword, servicioCredenciales, this::verificarAlmacenamientoDisponible,
+				this::guardarEnArchivo, new ControladorRegistros.Presentador() {
+					@Override
+					public void mostrar(String mensaje, String titulo, int tipo) {
+						mostrarMensaje(mensaje, titulo, tipo);
+					}
+
+					@Override
+					public boolean confirmarEliminacion(int cantidad) {
+						return JOptionPane.showConfirmDialog(GestorContrasenas.this,
+								"¿Eliminar las " + cantidad + " contraseñas seleccionadas?",
+								"Confirmar eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE)
+								== JOptionPane.YES_OPTION;
+					}
+				});
 		MenusContextuales.agregarMenuTexto(txtCuenta);
 		MenusContextuales.agregarMenuTexto(txtUsuario);
 		MenusContextuales.agregarMenuPassword(txtPassword);
@@ -327,225 +153,50 @@ public class GestorContrasenas extends JFrame {
 
 		btnConfiguracion.addActionListener(e -> mostrarConfiguracion());
 		btnCerrarSesion.addActionListener(e -> cerrarSesion());
-		btnGuardar.addActionListener(e -> guardarNuevoRegistro());
-		btnActualizar.addActionListener(e -> actualizarRegistroSeleccionado());
-		btnEliminar.addActionListener(e -> eliminarRegistro());
-		btnLimpiar.addActionListener(e -> limpiarCampos());
+		btnGuardar.addActionListener(e -> controlador.guardarNuevoRegistro());
+		btnActualizar.addActionListener(e -> controlador.actualizarRegistroSeleccionado());
+		btnEliminar.addActionListener(e -> controlador.eliminarRegistro());
+		btnLimpiar.addActionListener(e -> controlador.limpiarCampos());
 		btnImportarGoogle.addActionListener(e -> mostrarImportacionGoogle());
-		tabla.getSelectionModel().addListSelectionListener(e -> {
-			if (!e.getValueIsAdjusting()) {
-				actualizarAccionesSeleccionMultiples(btnGuardar, btnActualizar, btnEliminar, btnLimpiar,
-						btnImportarGoogle);
-			}
-		});
+		new ControladorEventosTabla(tabla, modeloTabla, txtBuscar, this::actualizarFiltroTabla, registro -> {
+			txtCuenta.setText(registro.getCuenta());
+			txtUsuario.setText(registro.getUsuario());
+			txtPassword.setText(registro.getPassword());
+		}, this::alternarGrupoServicio).instalar();
+		controlador.instalarEventosSeleccion(btnGuardar, btnActualizar, btnEliminar, btnLimpiar, btnImportarGoogle);
 
-		txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-			@Override
-			public void insertUpdate(javax.swing.event.DocumentEvent e) {
-				actualizarFiltroTabla();
-			}
-			@Override
-			public void removeUpdate(javax.swing.event.DocumentEvent e) {
-				actualizarFiltroTabla();
-			}
-			@Override
-			public void changedUpdate(javax.swing.event.DocumentEvent e) {
-				actualizarFiltroTabla();
-			}
-		});
-
-		tabla.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				if (e.getButton() == MouseEvent.BUTTON1) {
-					int filaVista = tabla.getSelectedRow();
-					if (filaVista != -1) {
-						if (tabla.getSelectedRowCount() > 1) {
-							return;
-						}
-						int fila = tabla.convertRowIndexToModel(filaVista);
-						if (esFilaCabecera(fila)) {
-							String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
-							if (tabla.columnAtPoint(e.getPoint()) == 0 && e.getX() < 36) {
-								alternarGrupoServicio(servicio);
-							}
-							return;
-						}
-						txtCuenta.setText(modeloTabla.getValueAt(fila, 0).toString());
-						txtUsuario.setText(modeloTabla.getValueAt(fila, 1).toString());
-						txtPassword.setText(modeloTabla.getValueAt(fila, 2).toString());
-					}
-				}
-			}
-		});
 	}
 
 	private void actualizarFiltroTabla() {
-		String consulta = txtBuscar.getText().trim();
-		String consultaNormalizada = consulta.toLowerCase(Locale.ROOT);
-		Set<String> serviciosCoincidentes = new HashSet<>();
-		for (int fila = 0; fila < modeloTabla.getRowCount(); fila++) {
-			if (!esFilaCabecera(fila) && coincideConBusqueda(fila, consultaNormalizada)) {
-				serviciosCoincidentes.add(normalizarServicio(modeloTabla.getValueAt(fila, 0).toString()));
-			}
-		}
-
-		ordenadorTabla.setRowFilter(new RowFilter<DefaultTableModel, Integer>() {
-			@Override
-			public boolean include(Entry<? extends DefaultTableModel, ? extends Integer> entry) {
-				int fila = entry.getIdentifier();
-				String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
-				boolean coincide = coincideConBusqueda(fila, consultaNormalizada);
-				boolean esCabecera = esFilaCabecera(fila);
-				int cantidad = cantidadPorServicio.getOrDefault(servicio, 1);
-
-				if (cantidad < 2) {
-					return !esCabecera && coincide;
-				}
-				if (consultaNormalizada.isEmpty()) {
-					return esCabecera || serviciosExpandidos.contains(servicio);
-				}
-				if (!serviciosCoincidentes.contains(servicio)) {
-					return false;
-				}
-				return esCabecera || (serviciosExpandidos.contains(servicio) && coincide);
-			}
-		});
-		tabla.setDragEnabled(consultaNormalizada.isEmpty());
-	}
-
-	private boolean coincideConBusqueda(int fila, String consulta) {
-		if (consulta.isEmpty()) {
-			return !esFilaCabecera(fila);
-		}
-		if (esFilaCabecera(fila)) {
-			return false;
-		}
-		String servicio = modeloTabla.getValueAt(fila, 0).toString().toLowerCase(Locale.ROOT);
-		String usuario = modeloTabla.getValueAt(fila, 1).toString().toLowerCase(Locale.ROOT);
-		return servicio.contains(consulta) || usuario.contains(consulta);
-	}
-
-	private String normalizarServicio(String servicio) {
-		return servicio.trim().toLowerCase(Locale.ROOT);
-	}
-
-	private boolean esEncabezadoContraido(int fila) {
-		if (!esFilaCabecera(fila)) {
-			return false;
-		}
-		String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
-		return !serviciosExpandidos.contains(servicio);
+		modeloTabla.actualizarFiltro(tabla, ordenadorTabla, txtBuscar.getText());
 	}
 
 	private boolean esFilaCabecera(int fila) {
-		return fila >= 0 && fila < modeloTabla.getRowCount()
-				&& modeloTabla.getValueAt(fila, 1) == null && modeloTabla.getValueAt(fila, 2) == null;
+		return modeloTabla.esFilaCabecera(fila);
 	}
 
 	private String claveRegistro(int fila) {
-		return modeloTabla.getValueAt(fila, 0).toString() + '\u0000' + modeloTabla.getValueAt(fila, 1).toString();
+		return modeloTabla.claveRegistro(fila);
 	}
 
 	private void reconstruirGruposServicios() {
-		cantidadPorServicio.clear();
-		for (int fila = 0; fila < modeloTabla.getRowCount(); fila++) {
-			if (esFilaCabecera(fila)) {
-				continue;
-			}
-			String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
-			if (servicio.isEmpty()) {
-				continue;
-			}
-			cantidadPorServicio.put(servicio, cantidadPorServicio.getOrDefault(servicio, 0) + 1);
-		}
-		serviciosExpandidos.retainAll(cantidadPorServicio.keySet());
+		modeloTabla.reconstruirGruposServicios();
 	}
 
 	private boolean reordenarGrupoDesdeVista(int filaOrigenVista, int filaDestinoVista) {
-		if (filaOrigenVista < 0 || filaOrigenVista >= tabla.getRowCount() || filaDestinoVista < 0
-				|| filaDestinoVista > tabla.getRowCount()) {
+		if (!modeloTabla.reordenarGrupoDesdeVista(tabla, filaOrigenVista, filaDestinoVista)) {
 			return false;
-		}
-
-		int filaOrigen = tabla.convertRowIndexToModel(filaOrigenVista);
-		String servicioOrigen = normalizarServicio(modeloTabla.getValueAt(filaOrigen, 0).toString());
-		if (servicioOrigen.isEmpty()) {
-			return false;
-		}
-
-		String servicioDestino = null;
-		if (filaDestinoVista < tabla.getRowCount()) {
-			int filaDestino = tabla.convertRowIndexToModel(filaDestinoVista);
-			servicioDestino = normalizarServicio(modeloTabla.getValueAt(filaDestino, 0).toString());
-		}
-		if (servicioOrigen.equals(servicioDestino)) {
-			return false;
-		}
-
-		LinkedHashMap<String, List<Object[]>> grupos = new LinkedHashMap<>();
-		for (int fila = 0; fila < modeloTabla.getRowCount(); fila++) {
-			if (esFilaCabecera(fila)) {
-				continue;
-			}
-			String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
-			grupos.computeIfAbsent(servicio, clave -> new ArrayList<>()).add(new Object[]{
-					modeloTabla.getValueAt(fila, 0), modeloTabla.getValueAt(fila, 1), modeloTabla.getValueAt(fila, 2)});
-		}
-
-		List<String> orden = new ArrayList<>(grupos.keySet());
-		List<Object[]> grupoMovido = grupos.remove(servicioOrigen);
-		int indiceDestino = servicioDestino == null ? orden.size() : orden.indexOf(servicioDestino);
-		if (indiceDestino < 0) {
-			return false;
-		}
-		orden.remove(servicioOrigen);
-		if (servicioDestino != null && orden.indexOf(servicioDestino) < indiceDestino) {
-			indiceDestino--;
-		}
-		orden.add(Math.min(indiceDestino, orden.size()), servicioOrigen);
-
-		modeloTabla.setRowCount(0);
-		for (String servicio : orden) {
-			List<Object[]> registrosGrupo = servicio.equals(servicioOrigen) ? grupoMovido : grupos.get(servicio);
-			if (registrosGrupo.size() > 1) {
-				modeloTabla.addRow(new Object[]{registrosGrupo.get(0)[0], null, null});
-			}
-			for (Object[] registro : registrosGrupo) {
-				modeloTabla.addRow(registro);
-			}
 		}
 		guardarEnArchivo();
 		return true;
 	}
 
 	private void normalizarOrdenGrupos() {
-		LinkedHashMap<String, List<Object[]>> grupos = new LinkedHashMap<>();
-		for (int fila = 0; fila < modeloTabla.getRowCount(); fila++) {
-			if (esFilaCabecera(fila)) {
-				continue;
-			}
-			String servicio = normalizarServicio(modeloTabla.getValueAt(fila, 0).toString());
-			grupos.computeIfAbsent(servicio, clave -> new ArrayList<>()).add(new Object[]{
-					modeloTabla.getValueAt(fila, 0), modeloTabla.getValueAt(fila, 1), modeloTabla.getValueAt(fila, 2)});
-		}
-		modeloTabla.setRowCount(0);
-		for (List<Object[]> grupo : grupos.values()) {
-			if (grupo.size() > 1) {
-				modeloTabla.addRow(new Object[]{grupo.get(0)[0], null, null});
-			}
-			for (Object[] registro : grupo) {
-				modeloTabla.addRow(registro);
-			}
-		}
+		modeloTabla.normalizarOrdenGrupos();
 	}
 
 	private void alternarGrupoServicio(String servicio) {
-		if (serviciosExpandidos.contains(servicio)) {
-			serviciosExpandidos.remove(servicio);
-		} else {
-			serviciosExpandidos.add(servicio);
-		}
+		modeloTabla.alternarGrupoServicio(servicio);
 		actualizarFiltroTabla();
 	}
 
@@ -562,45 +213,13 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private void actualizarColoresTema() {
-		if (colorResaltado.equals(Color.BLACK) && modoOscuro) {
-			colorBg = new Color(18, 18, 18);
-			colorCard = new Color(31, 31, 31);
-			colorInput = new Color(24, 24, 24);
-			colorTextPrimary = COLOR_TEXTO_OSCURO;
-			colorTextMuted = COLOR_TEXTO_SECUNDARIO_OSCURO;
-			colorBorder = new Color(62, 62, 62);
-		} else if (colorResaltado.equals(Color.BLACK)) {
-			colorBg = new Color(245, 245, 245);
-			colorCard = new Color(250, 250, 250);
-			colorInput = new Color(255, 255, 255);
-			colorTextPrimary = new Color(38, 40, 43);
-			colorTextMuted = new Color(82, 85, 89);
-			colorBorder = new Color(170, 170, 170);
-		} else if (modoOscuro) {
-			colorBg = colorTonoResaltado(0.70f, 0.60f);
-			colorCard = colorTonoResaltado(0.70f, 0.30f);
-			colorInput = colorTonoResaltado(0.35f, 0.10f);
-			colorTextPrimary = COLOR_TEXTO_OSCURO;
-			colorTextMuted = COLOR_TEXTO_SECUNDARIO_OSCURO;
-			colorBorder = colorTonoResaltado(0.5f, 0.100f);
-		} else {
-			colorBg = colorTonoResaltado(0.70f, 0.94f);
-			colorCard = colorTonoResaltado(0.18f, 0.96f);
-			colorInput = colorTonoResaltado(0.35f, 0.99f);
-			colorTextPrimary = new Color(38, 40, 43);
-			colorTextMuted = new Color(82, 85, 89);
-			colorBorder = colorTonoResaltado(0.3f, 0.64f);
-		}
-	}
-
-	private Color colorTonoResaltado(float saturacion, float brillo) {
-		float[] hsb = Color.RGBtoHSB(colorResaltado.getRed(), colorResaltado.getGreen(),
-				colorResaltado.getBlue(), null);
-		if (colorResaltado.equals(Color.BLACK)) {
-			saturacion = 0;
-			brillo = modoOscuro ? Math.min(brillo, 0.14f) : Math.max(brillo, 0.90f);
-		}
-		return colorTono(hsb[0], saturacion, brillo);
+		TemaColores tema = TemaColores.crear(modoOscuro, colorResaltado);
+		colorBg = tema.getFondo();
+		colorCard = tema.getTarjeta();
+		colorInput = tema.getEntrada();
+		colorTextPrimary = tema.getTexto();
+		colorTextMuted = tema.getTextoSecundario();
+		colorBorder = tema.getBorde();
 	}
 
 	private FlatSVGIcon crearIconoEncabezado(String recurso, int tamano) {
@@ -609,10 +228,6 @@ public class GestorContrasenas extends JFrame {
 		icono.setColorFilter(new FlatSVGIcon.ColorFilter(
 				color -> Color.WHITE.equals(color) ? tinta : color));
 		return icono;
-	}
-
-	private Color colorTono(float tono, float saturacion, float brillo) {
-		return Color.getHSBColor(tono, saturacion, brillo);
 	}
 
 	private boolean establecerPreferencias(boolean oscuro, boolean confirmarMostrarContrasena, Color resaltado) {
@@ -627,637 +242,105 @@ public class GestorContrasenas extends JFrame {
 		colorResaltado = resaltado;
 		modoOscuro = oscuro;
 		actualizarColoresTema();
-		aplicarColoresInterfaz();
+		vista.aplicarColoresInterfaz(colorBg, colorCard, colorInput, colorTextPrimary, colorTextMuted, colorBorder,
+				colorResaltado, modoOscuro, almacenamientoDisponible, this::estilarTabla);
 		repaint();
 		revalidate();
 		return true;
 	}
 
 	private void mostrarConfiguracion() {
-		JDialog dialogo = new JDialog(this, "Configuración", true);
-		JPanel panel = new JPanel(new BorderLayout(12, 18));
-		panel.setBorder(new EmptyBorder(20, 22, 18, 22));
-		panel.setBackground(colorCard);
-
-		JLabel lblTema = new JLabel("Tema de la aplicación");
-		lblTema.setFont(new Font("Segoe UI", Font.BOLD, 13));
-		lblTema.setForeground(colorTextPrimary);
-		panel.add(lblTema, BorderLayout.NORTH);
-
-		JPanel opciones = new JPanel();
-		opciones.setLayout(new BoxLayout(opciones, BoxLayout.Y_AXIS));
-		opciones.setOpaque(false);
-		JLabel lblDescripcion = new JLabel("Usa el aspecto oscuro o claro");
-		lblDescripcion.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-		lblDescripcion.setForeground(colorTextMuted);
-		lblDescripcion.setAlignmentX(Component.LEFT_ALIGNMENT);
-		opciones.add(lblDescripcion);
-		opciones.add(Box.createVerticalStrut(8));
-
-		JLabel lblModo = new JLabel(modoOscuro ? "Modo oscuro" : "Modo claro");
-		lblModo.setFont(new Font("Segoe UI", Font.BOLD, 12));
-		lblModo.setForeground(colorTextPrimary);
-
-		InterruptorTema interruptor = new InterruptorTema(modoOscuro, colorResaltado);
-		interruptor.setToolTipText("Cambiar entre modo oscuro y modo claro");
-		interruptor.getAccessibleContext().setAccessibleName("Cambiar tema");
-		interruptor.addActionListener(e -> lblModo.setText(interruptor.isSelected() ? "Modo oscuro" : "Modo claro"));
-
-		JPanel selector = new JPanel(new BorderLayout(10, 0));
-		selector.setOpaque(true);
-		selector.setBorder(new EmptyBorder(10, 12, 10, 12));
-		selector.setBackground(colorInput);
-		selector.add(lblModo, BorderLayout.CENTER);
-		selector.add(interruptor, BorderLayout.EAST);
-		selector.setAlignmentX(Component.LEFT_ALIGNMENT);
-		opciones.add(selector);
-		opciones.add(Box.createVerticalStrut(14));
-
-		JLabel lblColorResaltado = new JLabel("Color de resaltado");
-		lblColorResaltado.setFont(new Font("Segoe UI", Font.BOLD, 12));
-		lblColorResaltado.setForeground(colorTextPrimary);
-		lblColorResaltado.setAlignmentX(Component.LEFT_ALIGNMENT);
-		opciones.add(lblColorResaltado);
-		opciones.add(Box.createVerticalStrut(6));
-
-		Color[] colorElegido = {colorResaltado};
-		JPanel muestras = new JPanel(new FlowLayout(FlowLayout.CENTER, 7, 5));
-		muestras.setOpaque(true);
-		muestras.setBackground(colorInput);
-		muestras.setBorder(new EmptyBorder(5, 6, 5, 6));
-		ButtonGroup grupoColores = new ButtonGroup();
-		for (int i = 0; i < COLORES_RESALTADO.length; i++) {
-			Color color = COLORES_RESALTADO[i];
-			SelectorColor selectorColor = new SelectorColor(color, NOMBRES_RESALTADO[i], color.equals(colorResaltado));
-			grupoColores.add(selectorColor);
-			muestras.add(selectorColor);
-			selectorColor.addActionListener(e -> {
-				colorElegido[0] = color;
-				interruptor.setColorResaltado(color);
-			});
-		}
-		muestras.setAlignmentX(Component.LEFT_ALIGNMENT);
-		opciones.add(muestras);
-		opciones.add(Box.createVerticalStrut(10));
-
-		JCheckBox confirmarPassword = new JCheckBox("Confirmar antes de mostrar contraseñas",
-				confirmarAntesDeMostrarContrasena);
-		confirmarPassword.setOpaque(false);
-		confirmarPassword.setForeground(colorTextPrimary);
-		confirmarPassword.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-		confirmarPassword.setToolTipText("Puedes cambiar esta opción en cualquier momento desde Configuración");
-		confirmarPassword.setAlignmentX(Component.LEFT_ALIGNMENT);
-		opciones.add(confirmarPassword);
-		panel.add(opciones, BorderLayout.CENTER);
-
-		BotonEstilizado btnAplicar = new BotonEstilizado("Aplicar", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);
-		btnAplicar.addActionListener(e -> {
-			if (establecerPreferencias(interruptor.isSelected(), confirmarPassword.isSelected(), colorElegido[0])) {
-				dialogo.dispose();
-			}
-		});
-		JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-		acciones.setOpaque(false);
-		acciones.add(btnAplicar);
-		panel.add(acciones, BorderLayout.SOUTH);
-
-		dialogo.setContentPane(panel);
-		dialogo.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		dialogo.setResizable(false);
-		dialogo.pack();
-		dialogo.setLocationRelativeTo(this);
-		dialogo.setVisible(true);
+		new DialogoConfiguracion(this, modoOscuro, confirmarAntesDeMostrarContrasena, colorResaltado, colorCard,
+				colorInput, colorTextPrimary, colorTextMuted, this::establecerPreferencias).mostrar();
 	}
 
-	private static final Color[] COLORES_RESALTADO = {new Color(0, 122, 204), new Color(46, 139, 139),
-			new Color(76, 145, 0), new Color(202, 145, 0), new Color(225, 77, 35), new Color(220, 45, 67),
-			new Color(184, 65, 165), new Color(112, 91, 205), new Color(94, 119, 102), new Color(164, 129, 88),
-			Color.BLACK};
-	private static final String[] NOMBRES_RESALTADO = {"Azul", "Turquesa", "Verde", "Amarillo", "Naranja", "Rojo",
-			"Rosa", "Violeta", "Verde grisáceo", "Arena", "Negro"};
-
-	private static class SelectorColor extends JToggleButton {
-		private final Color color;
-
-		private SelectorColor(Color color, String nombre, boolean seleccionado) {
-			this.color = color;
-			setSelected(seleccionado);
-			setPreferredSize(new Dimension(30, 30));
-			setToolTipText(nombre);
-			getAccessibleContext().setAccessibleName(nombre);
-			setOpaque(false);
-			setContentAreaFilled(false);
-			setBorderPainted(false);
-			setFocusPainted(false);
-			setCursor(new Cursor(Cursor.HAND_CURSOR));
-		}
-
-		@Override
-		protected void paintComponent(Graphics g) {
-			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			int diameter = 20;
-			int x = (getWidth() - diameter) / 2;
-			int y = (getHeight() - diameter) / 2;
-			if (isSelected()) {
-				g2.setColor(Color.BLACK.equals(color) ? Color.WHITE : color);
-				g2.setStroke(new BasicStroke(2.5f));
-				g2.drawOval(x - 4, y - 4, diameter + 8, diameter + 8);
-			} else if (getModel().isRollover()) {
-				g2.setColor(color.brighter());
-				g2.setStroke(new BasicStroke(1.5f));
-				g2.drawOval(x - 2, y - 2, diameter + 4, diameter + 4);
+	private void actualizarResumenBoveda() {
+		int cantidad = 0;
+		for (int fila = 0; fila < modeloTabla.getRowCount(); fila++) {
+			if (!esFilaCabecera(fila)) {
+				cantidad++;
 			}
-			g2.setColor(color);
-			g2.fillOval(x, y, diameter, diameter);
-			g2.dispose();
 		}
-	}
-
-	private static class InterruptorTema extends JToggleButton {
-		private Color colorResaltado;
-
-		private InterruptorTema(boolean seleccionado, Color colorResaltado) {
-			this.colorResaltado = colorResaltado;
-			setSelected(seleccionado);
-			setPreferredSize(new Dimension(52, 30));
-			setToolTipText("Cambiar tema");
-			setOpaque(false);
-			setContentAreaFilled(false);
-			setBorderPainted(false);
-			setFocusPainted(false);
-			setCursor(new Cursor(Cursor.HAND_CURSOR));
-		}
-
-		private void setColorResaltado(Color colorResaltado) {
-			this.colorResaltado = colorResaltado;
-			repaint();
-		}
-
-		@Override
-		protected void paintComponent(Graphics g) {
-			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-			int trackWidth = 46;
-			int trackHeight = 24;
-			int x = (getWidth() - trackWidth) / 2;
-			int y = (getHeight() - trackHeight) / 2;
-			Color track = isSelected() ? colorResaltado : new Color(76, 76, 76);
-			if (getModel().isRollover()) {
-				track = track.brighter();
-			}
-			g2.setColor(track);
-			g2.fillRoundRect(x, y, trackWidth, trackHeight, trackHeight, trackHeight);
-
-			int knobX = isSelected() ? x + trackWidth - 21 : x + 3;
-			g2.setColor(new Color(226, 226, 226));
-			g2.fillOval(knobX, y + 3, 18, 18);
-
-			if (hasFocus()) {
-				g2.setColor(COLOR_TEXTO_SECUNDARIO_OSCURO);
-				g2.drawRoundRect(x, y, trackWidth, trackHeight, trackHeight, trackHeight);
-			}
-			g2.dispose();
-		}
-	}
-
-	private void aplicarColoresInterfaz() {
-		getContentPane().setBackground(colorBg);
-
-		lblTitulo.setForeground(colorTextPrimary);
-		lblCuenta.setForeground(colorTextPrimary);
-		lblUsuario.setForeground(colorTextPrimary);
-		lblPassword.setForeground(colorTextPrimary);
-		lblBuscar.setForeground(colorTextPrimary);
-
-		lblUserBadge.setOpaque(false);
-		Color tintaEncabezado = modoOscuro ? Color.WHITE : Color.BLACK;
-		lblUserBadge.setForeground(tintaEncabezado);
-		lblUserBadge.setIcon(crearIconoEncabezado("icons/user.svg", 14));
-		btnConfiguracion.setForeground(tintaEncabezado);
-		btnConfiguracion.setIcon(crearIconoEncabezado("icons/settings.svg", 16));
-		lblBuscar.setForeground(tintaEncabezado);
-		lblBuscar.setIcon(crearIconoEncabezado("icons/search.svg", 14));
-
-		panelFormulario.setColores(colorCard, colorBorder);
-
-		for (JComponent comp : componentesEstilizados) {
-			comp.setBackground(colorInput);
-			comp.setForeground(colorTextPrimary);
-			if (comp instanceof JTextField) {
-				((JTextField) comp).setCaretColor(colorTextPrimary);
-			}
-			comp.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(colorBorder, 1, true),
-					new EmptyBorder(6, 8, 6, 8)));
-		}
-		estilarTabla();
+		lblContadorCredenciales.setText(cantidad + (cantidad == 1 ? " credencial" : " credenciales"));
+		lblEstadoBoveda.setText(almacenamientoDisponible ? "Bóveda protegida" : "Bóveda bloqueada");
+		lblDetalleEstado.setText(almacenamientoDisponible
+				? "Cifrado AES-256-GCM · Almacenamiento local"
+				: "No se pudo cargar la bóveda; las modificaciones están bloqueadas.");
+		lblEstadoBoveda.setForeground(almacenamientoDisponible ? colorTextPrimary : COLOR_DANGER);
 	}
 
 	private void estilarTabla() {
-		tabla.setBackground(colorCard);
-		tabla.setForeground(colorTextPrimary);
-		tabla.setGridColor(colorBorder);
-		tabla.setRowHeight(38);
-		tabla.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-		tabla.setSelectionBackground(colorSeleccionTabla());
-		tabla.setSelectionForeground(colorTextPrimary);
-		tabla.setShowGrid(false);
-		tabla.setIntercellSpacing(new Dimension(0, 0));
-
-		JTableHeader header = tabla.getTableHeader();
-		header.setBackground(colorTonoResaltado(modoOscuro ? 0.34f : 0.16f, modoOscuro ? 0.21f : 0.84f));
-		header.setForeground(colorTextMuted);
-		header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-		header.setPreferredSize(new Dimension(100, 36));
-		header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder));
-
-		scrollPane.getViewport().setBackground(colorCard);
-		scrollPane.setBorder(BorderFactory.createLineBorder(colorBorder, 1, true));
-
-		DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
+		new EstiloTablaCredenciales(colorCard, colorBorder, colorTextPrimary, colorTextMuted,
+				colorSeleccionTabla()).aplicar(tabla, scrollPane, modeloTabla);
+		ColumnaContrasena.instalar(tabla, new ColumnaContrasena.AccionesContrasena() {
 			@Override
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-					boolean hasFocus, int row, int column) {
-				Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-				setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
-						new EmptyBorder(0, 10, 0, 10)));
-				if (!isSelected) {
-					c.setBackground(row % 2 == 0
-							? colorCard
-							: colorTonoResaltado(modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
+			public boolean esEncabezado(int filaModelo) {
+				return esFilaCabecera(filaModelo);
+			}
+
+			@Override
+			public String claveRegistro(int filaModelo) {
+				return GestorContrasenas.this.claveRegistro(filaModelo);
+			}
+
+			@Override
+			public boolean estaVisible(String clave) {
+				return cuentasConPasswordVisible.contains(clave);
+			}
+
+			@Override
+			public void alternarVisibilidad(String clave) {
+				if (!cuentasConPasswordVisible.remove(clave)) {
+					cuentasConPasswordVisible.add(clave);
 				}
-				return c;
 			}
-		};
 
-		for (int i = 0; i < tabla.getColumnCount(); i++) {
-			tabla.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
-		}
-		tabla.getColumnModel().getColumn(0).setCellRenderer(new GroupServiceCellRenderer());
-		tabla.getColumnModel().getColumn(1).setCellRenderer(new GroupAccountCellRenderer());
-		tabla.getColumnModel().getColumn(2).setCellRenderer(new PasswordCellRenderer());
-		tabla.getColumnModel().getColumn(2).setCellEditor(new PasswordCellEditor());
-	}
-
-	private class GroupAccountCellRenderer extends DefaultTableCellRenderer {
-		@Override
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
-				int row, int column) {
-			Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-			int modelRow = table.convertRowIndexToModel(row);
-			setText(esFilaCabecera(modelRow) ? "" : String.valueOf(value));
-			setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
-					new EmptyBorder(0, 10, 0, 10)));
-			if (!isSelected) {
-				component.setBackground(row % 2 == 0 ? colorCard
-						: colorTonoResaltado(modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
+			@Override
+			public boolean puedeMostrar() {
+				return protectorVentana.puedeMostrarContrasenas();
 			}
-			return component;
-		}
-	}
 
-	private class GroupServiceCellRenderer extends DefaultTableCellRenderer {
-		private final Icon iconoExpandido = new FlechaGrupoIcon(true);
-		private final Icon iconoContraido = new FlechaGrupoIcon(false);
-
-		@Override
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
-				int row, int column) {
-			Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-			int modelRow = table.convertRowIndexToModel(row);
-			String servicio = normalizarServicio(String.valueOf(value));
-			int cantidad = cantidadPorServicio.getOrDefault(servicio, 1);
-			if (esFilaCabecera(modelRow)) {
-				boolean expandido = serviciosExpandidos.contains(servicio);
-				setIcon(expandido ? iconoExpandido : iconoContraido);
-				setIconTextGap(6);
-				setText(value + " · " + cantidad + " cuentas");
-				setToolTipText("Clic en la flecha para "
-						+ (expandido ? "contraer" : "desplegar") + " las cuentas");
-			} else if (cantidad > 1) {
-				setIcon(null);
-				setBorder(BorderFactory.createCompoundBorder(
-						BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
-						new EmptyBorder(0, 26, 0, 10)));
-				setText(String.valueOf(value));
-				setToolTipText(null);
-			} else {
-				setIcon(null);
-				setText(String.valueOf(value));
-				setToolTipText(null);
+			@Override
+			public boolean confirmarVisualizacion() {
+				return confirmarVisualizacionContrasena();
 			}
-			if (esFilaCabecera(modelRow) || cantidad <= 1) {
-				setBorder(BorderFactory.createCompoundBorder(
-						BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
-						new EmptyBorder(0, 10, 0, 10)));
+
+			@Override
+			public String ocultar(String contrasena) {
+				int cantidad = contrasena.codePointCount(0, contrasena.length());
+				StringBuilder mascara = new StringBuilder(cantidad);
+				for (int i = 0; i < cantidad; i++) {
+					mascara.append('•');
+				}
+				return mascara.toString();
 			}
-			if (!isSelected) {
-				component.setBackground(row % 2 == 0 ? colorCard
-						: colorTonoResaltado(modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
+
+			@Override
+			public Color colorAcciones() {
+				return modoOscuro ? Color.WHITE : Color.BLACK;
 			}
-			return component;
-		}
-	}
 
-	private static final class FlechaGrupoIcon implements Icon {
-		private final boolean expandido;
-
-		private FlechaGrupoIcon(boolean expandido) {
-			this.expandido = expandido;
-		}
-
-		@Override
-		public int getIconWidth() {
-			return 10;
-		}
-
-		@Override
-		public int getIconHeight() {
-			return 10;
-		}
-
-		@Override
-		public void paintIcon(Component component, Graphics graphics, int x, int y) {
-			Graphics2D g2 = (Graphics2D) graphics.create();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			g2.setColor(component.getForeground());
-			if (expandido) {
-				g2.fillPolygon(new int[]{x + 1, x + 9, x + 5}, new int[]{y + 3, y + 3, y + 8}, 3);
-			} else {
-				g2.fillPolygon(new int[]{x + 3, x + 3, x + 8}, new int[]{y + 1, y + 9, y + 5}, 3);
+			@Override
+			public FlatSVGIcon icono(String recurso, int tamano) {
+				return crearIconoEncabezado(recurso, tamano);
 			}
-			g2.dispose();
-		}
+
+			@Override
+			public void copiar(String contrasena, JButton boton) {
+				MenusContextuales.copiarContrasenaAlPortapapeles(contrasena, boton,
+						crearIconoEncabezado("icons/check.svg", 16));
+			}
+		});
 	}
 
 	private Color colorSeleccionTabla() {
-		Color base = colorCard;
-		float intensidad = modoOscuro ? 0.38f : 0.22f;
-		return new Color(Math.round(base.getRed() * (1 - intensidad) + colorResaltado.getRed() * intensidad),
-				Math.round(base.getGreen() * (1 - intensidad) + colorResaltado.getGreen() * intensidad),
-				Math.round(base.getBlue() * (1 - intensidad) + colorResaltado.getBlue() * intensidad));
-	}
-
-	private class PasswordCellRenderer extends JPanel implements javax.swing.table.TableCellRenderer {
-		private final JLabel lblPassword = new JLabel();
-		private final JButton btnVisibilidad = new JButton();
-		private final JButton btnCopiar = new JButton();
-		private final JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.TRAILING, 2, 0));
-
-		private PasswordCellRenderer() {
-			super(new BorderLayout(8, 0));
-			setOpaque(true);
-			setBorder(new EmptyBorder(0, 10, 0, 6));
-			configurarBotonIcono(btnVisibilidad, "Mostrar u ocultar contraseña");
-			configurarBotonIcono(btnCopiar, "Copiar contraseña");
-			panelAcciones.setOpaque(false);
-			panelAcciones.add(btnCopiar);
-			panelAcciones.add(btnVisibilidad);
-			add(lblPassword, BorderLayout.CENTER);
-			add(panelAcciones, BorderLayout.EAST);
-		}
-
-		@Override
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
-				int row, int column) {
-			int modelRow = table.convertRowIndexToModel(row);
-			boolean esCabecera = esFilaCabecera(modelRow);
-			String clave = esCabecera ? "" : claveRegistro(modelRow);
-			boolean visible = !esCabecera && cuentasConPasswordVisible.contains(clave);
-			lblPassword.setText(esCabecera ? ""
-					: (visible ? String.valueOf(value) : ocultarContrasena(String.valueOf(value))));
-			panelAcciones.setVisible(!esCabecera);
-			btnVisibilidad.setIcon(esCabecera ? null
-					: crearIconoEncabezado(visible ? "icons/eye-off.svg" : "icons/eye.svg", 16));
-			btnCopiar.setIcon(esCabecera ? null : crearIconoEncabezado("icons/copy.svg", 16));
-			btnVisibilidad.setText("");
-			btnCopiar.setText("");
-
-			Color fondo = isSelected
-					? table.getSelectionBackground()
-					: (row % 2 == 0
-							? colorCard
-							: colorTonoResaltado(modoOscuro ? 0.28f : 0.13f, modoOscuro ? 0.32f : 0.86f));
-			Color texto = isSelected ? table.getSelectionForeground() : colorTextPrimary;
-			setBackground(fondo);
-			lblPassword.setForeground(texto);
-			btnVisibilidad.setForeground(colorContrasteTema());
-			btnCopiar.setForeground(colorContrasteTema());
-			lblPassword.setFont(table.getFont());
-			return this;
-		}
-	}
-
-	private class PasswordCellEditor extends AbstractCellEditor implements TableCellEditor {
-		private final JPanel panel = new JPanel(new BorderLayout(8, 0));
-		private final JLabel lblPassword = new JLabel();
-		private final JButton btnVisibilidad = new JButton();
-		private final JButton btnCopiar = new JButton();
-		private final JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.TRAILING, 2, 0));
-		private String passwordActual;
-		private String claveActual;
-
-		private PasswordCellEditor() {
-			panel.setBorder(new EmptyBorder(0, 10, 0, 6));
-			configurarBotonIcono(btnVisibilidad, "Mostrar u ocultar contraseña");
-			configurarBotonIcono(btnCopiar, "Copiar contraseña");
-			panelAcciones.setOpaque(false);
-			panelAcciones.add(btnCopiar);
-			panelAcciones.add(btnVisibilidad);
-			panel.add(lblPassword, BorderLayout.CENTER);
-			panel.add(panelAcciones, BorderLayout.EAST);
-			btnCopiar.addActionListener(e -> {
-				if (tabla.getSelectedRowCount() > 1) {
-					fireEditingCanceled();
-					return;
-				}
-				MenusContextuales.copiarContrasenaAlPortapapeles(passwordActual, btnCopiar,
-						crearIconoEncabezado("icons/check.svg", 16));
-			});
-			btnVisibilidad.addActionListener(e -> {
-				if (tabla.getSelectedRowCount() > 1) {
-					fireEditingCanceled();
-					return;
-				}
-				if (cuentasConPasswordVisible.contains(claveActual)) {
-					cuentasConPasswordVisible.remove(claveActual);
-				} else {
-					if (!puedeMostrarContrasenas) {
-						fireEditingCanceled();
-						return;
-					}
-					if (!confirmarVisualizacionContrasena()) {
-						fireEditingCanceled();
-						return;
-					}
-					cuentasConPasswordVisible.add(claveActual);
-				}
-				actualizarContenido();
-				fireEditingStopped();
-			});
-		}
-
-		@Override
-		public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row,
-				int column) {
-			int modelRow = table.convertRowIndexToModel(row);
-			claveActual = claveRegistro(modelRow);
-			passwordActual = String.valueOf(value);
-			actualizarContenido();
-			panel.setBackground(table.getSelectionBackground());
-			lblPassword.setForeground(table.getSelectionForeground());
-			btnVisibilidad.setForeground(colorContrasteTema());
-			btnCopiar.setForeground(colorContrasteTema());
-			lblPassword.setFont(table.getFont());
-			return panel;
-		}
-
-		private void actualizarContenido() {
-			boolean visible = cuentasConPasswordVisible.contains(claveActual);
-			lblPassword.setText(visible ? passwordActual : ocultarContrasena(passwordActual));
-			btnVisibilidad.setIcon(crearIconoEncabezado(visible ? "icons/eye-off.svg" : "icons/eye.svg", 16));
-			btnCopiar.setIcon(crearIconoEncabezado("icons/copy.svg", 16));
-			btnVisibilidad.setText("");
-			btnCopiar.setText("");
-		}
-
-		@Override
-		public Object getCellEditorValue() {
-			return passwordActual;
-		}
-	}
-
-	private String ocultarContrasena(String contrasena) {
-		int cantidadCaracteres = contrasena.codePointCount(0, contrasena.length());
-		StringBuilder mascara = new StringBuilder(cantidadCaracteres);
-		for (int i = 0; i < cantidadCaracteres; i++) {
-			mascara.append('•');
-		}
-		return mascara.toString();
-	}
-
-	private void configurarBotonIcono(JButton boton, String descripcion) {
-		boton.setFocusable(false);
-		boton.setBorderPainted(false);
-		boton.setToolTipText(descripcion);
-		estilarBotonIcono(boton);
-		boton.setPreferredSize(new Dimension(28, 28));
-	}
-
-	private Color colorContrasteTema() {
-		return modoOscuro ? Color.WHITE : Color.BLACK;
-	}
-
-	private FlatSVGIcon crearIconoBotonAccion(String recurso, int tamano) {
-		FlatSVGIcon icono = new FlatSVGIcon(recurso, tamano, tamano);
-		icono.setColorFilter(new FlatSVGIcon.ColorFilter(color -> Color.WHITE));
-		return icono;
-	}
-
-	private void actualizarAccionesSeleccionMultiples(BotonEstilizado btnGuardar, BotonEstilizado btnActualizar,
-			BotonEstilizado btnEliminar, BotonEstilizado btnLimpiar, BotonEstilizado btnImportarGoogle) {
-		boolean seleccionMultiple = tabla.getSelectedRowCount() > 1;
-		if (seleccionMultiple) {
-			limpiarCamposFormulario();
-		}
-		txtCuenta.setEnabled(!seleccionMultiple);
-		txtUsuario.setEnabled(!seleccionMultiple);
-		txtPassword.setEnabled(!seleccionMultiple);
-		btnGuardar.setEnabled(!seleccionMultiple);
-		btnActualizar.setEnabled(!seleccionMultiple);
-		btnEliminar.setEnabled(true);
-		btnLimpiar.setEnabled(!seleccionMultiple);
-		btnImportarGoogle.setEnabled(!seleccionMultiple);
-	}
-
-	private boolean existeServicioConCorreo(String cuenta, String usuario, int filaIgnorada) {
-		for (int i = 0; i < modeloTabla.getRowCount(); i++) {
-			if (esFilaCabecera(i)) {
-				continue;
-			}
-			if (i == filaIgnorada)
-				continue;
-			String cuentaExistente = modeloTabla.getValueAt(i, 0).toString().trim();
-			String usuarioExistente = modeloTabla.getValueAt(i, 1).toString().trim();
-			if (cuentaExistente.equalsIgnoreCase(cuenta) && usuarioExistente.equalsIgnoreCase(usuario))
-				return true;
-		}
-		return false;
+		return TemaColores.crear(modoOscuro, colorResaltado).getColorSeleccion(modoOscuro, colorResaltado);
 	}
 
 	private void mostrarImportacionGoogle() {
 		JDialog dialogo = new JDialog(this, "Importar contraseñas de Google", true);
-		JPanel contenido = new JPanel(new BorderLayout(12, 16));
-		contenido.setBorder(new EmptyBorder(18, 20, 16, 20));
-		contenido.setBackground(colorCard);
-
-		JLabel instrucciones = new JLabel(
-				"<html>Arrastra aquí un archivo .csv de Google Password Manager.<br>"
-						+ "Se leerán las columnas name, username y password.</html>");
-		instrucciones.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-		instrucciones.setForeground(colorTextPrimary);
-		instrucciones.setHorizontalAlignment(SwingConstants.CENTER);
-		instrucciones.setOpaque(true);
-		instrucciones.setBackground(colorInput);
-		instrucciones.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(colorBorder, 1, true), new EmptyBorder(24, 18, 24, 18)));
-		instrucciones.setTransferHandler(new TransferHandler() {
-			@Override
-			public boolean canImport(TransferSupport support) {
-				return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
-			}
-
-			@Override
-			public boolean importData(TransferSupport support) {
-				if (!canImport(support)) {
-					return false;
-				}
-				try {
-					Object datos = support.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
-					if (!(datos instanceof List<?>) || ((List<?>) datos).isEmpty()
-							|| !(((List<?>) datos).get(0) instanceof java.io.File)) {
-						return false;
-					}
-					java.io.File archivo = (java.io.File) ((List<?>) datos).get(0);
-					return importarArchivoGoogle(archivo.toPath(), dialogo);
-				} catch (Exception e) {
-					mostrarMensajeEnDialogo(dialogo, "No se pudo leer el archivo soltado: " + e.getMessage(),
-							"Error de importación", JOptionPane.ERROR_MESSAGE);
-					return false;
-				}
-			}
-		});
-		contenido.add(instrucciones, BorderLayout.CENTER);
-
-		BotonEstilizado btnSeleccionar = new BotonEstilizado("Seleccionar archivo .csv", COLOR_BOTON,
-				COLOR_BOTON_HOVER, 8);
-		btnSeleccionar.setIcon(crearIconoBotonAccion("icons/folder.svg", 16));
-		btnSeleccionar.addActionListener(e -> {
-			JFileChooser selector = new JFileChooser();
-			selector.setFileFilter(new FileNameExtensionFilter("CSV de Google Password Manager (*.csv)", "csv"));
-			if (selector.showOpenDialog(dialogo) == JFileChooser.APPROVE_OPTION
-					&& importarArchivoGoogle(selector.getSelectedFile().toPath(), dialogo)) {
-				dialogo.dispose();
-			}
-		});
-
-		BotonEstilizado btnCancelar = new BotonEstilizado("Cancelar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
-		btnCancelar.setIcon(crearIconoBotonAccion("icons/x.svg", 16));
-		btnCancelar.addActionListener(e -> dialogo.dispose());
-
-		JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-		acciones.setOpaque(false);
-		acciones.add(btnCancelar);
-		acciones.add(btnSeleccionar);
-		contenido.add(acciones, BorderLayout.SOUTH);
-
-		dialogo.setContentPane(contenido);
-		dialogo.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		dialogo.setMinimumSize(new Dimension(480, 210));
-		dialogo.pack();
-		dialogo.setLocationRelativeTo(this);
-		dialogo.setVisible(true);
+		new DialogoImportacionGoogle(dialogo, colorCard, colorInput, colorTextPrimary, colorBorder,
+				this::importarArchivoGoogle).mostrar();
 	}
 
 	private boolean importarArchivoGoogle(Path archivo, JDialog dialogo) {
@@ -1288,33 +371,14 @@ public class GestorContrasenas extends JFrame {
 			return false;
 		}
 
-		List<RegistroContrasena> registrosActualizados = new ArrayList<>();
-		Map<String, Integer> indicesPorCuenta = new HashMap<>();
+		List<RegistroContrasena> registrosActuales = new ArrayList<>();
 		for (int fila = 0; fila < modeloTabla.getRowCount(); fila++) {
 			if (!esFilaCabecera(fila)) {
-				RegistroContrasena existente = new RegistroContrasena(modeloTabla.getValueAt(fila, 0).toString(),
-						modeloTabla.getValueAt(fila, 1).toString(), modeloTabla.getValueAt(fila, 2).toString());
-				indicesPorCuenta.put(claveImportacionGoogle(existente), registrosActualizados.size());
-				registrosActualizados.add(existente);
+				registrosActuales.add(registroEnFila(fila));
 			}
 		}
-
-		int agregados = 0;
-		int reemplazados = 0;
-		for (RegistroContrasena importado : importados) {
-			String clave = claveImportacionGoogle(importado);
-			Integer indiceExistente = indicesPorCuenta.get(clave);
-			if (indiceExistente == null) {
-				indicesPorCuenta.put(clave, registrosActualizados.size());
-				registrosActualizados.add(importado);
-				agregados++;
-			} else {
-				RegistroContrasena existente = registrosActualizados.get(indiceExistente);
-				registrosActualizados.set(indiceExistente, new RegistroContrasena(
-						existente.getCuenta(), existente.getUsuario(), importado.getPassword()));
-				reemplazados++;
-			}
-		}
+		ResultadoImportacion importacion = servicioCredenciales.combinarImportacion(registrosActuales, importados);
+		List<RegistroContrasena> registrosActualizados = importacion.getRegistros();
 
 		try {
 			almacenContrasenas.guardar(registrosActualizados);
@@ -1333,17 +397,12 @@ public class GestorContrasenas extends JFrame {
 		actualizarFiltroTabla();
 
 		mostrarMensajeEnDialogo(dialogo, "Importación completada."
-				+ "\nNuevas contraseñas: " + agregados
-				+ "\nContraseñas reemplazadas: " + reemplazados
+				+ "\nNuevas contraseñas: " + importacion.getAgregados()
+				+ "\nContraseñas reemplazadas: " + importacion.getReemplazados()
 				+ "\nFilas omitidas por campos vacíos: " + resultado.getOmitidos(),
 				"Importación de Google", JOptionPane.INFORMATION_MESSAGE);
 		dialogo.dispose();
 		return true;
-	}
-
-	private String claveImportacionGoogle(RegistroContrasena registro) {
-		return normalizarServicio(registro.getCuenta()) + '\u0000'
-				+ registro.getUsuario().trim().toLowerCase(Locale.ROOT);
 	}
 
 	private void mostrarMensajeEnDialogo(JDialog dialogo, String mensaje, String titulo, int tipo) {
@@ -1351,126 +410,6 @@ public class GestorContrasenas extends JFrame {
 		UIManager.put("Panel.background", colorCard);
 		UIManager.put("OptionPane.messageForeground", colorTextPrimary);
 		JOptionPane.showMessageDialog(dialogo, mensaje, titulo, tipo);
-	}
-
-	private void guardarNuevoRegistro() {
-		if (!verificarAlmacenamientoDisponible())
-			return;
-		String cuenta = txtCuenta.getText().trim();
-		String usuario = txtUsuario.getText().trim();
-		String password = new String(txtPassword.getPassword()).trim();
-
-		if (cuenta.isEmpty() || usuario.isEmpty() || password.isEmpty()) {
-			mostrarMensaje("Por favor completa todos los campos.", "Campos Incompletos", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-
-		if (existeServicioConCorreo(cuenta, usuario, -1)) {
-			mostrarMensaje("Ya existe un registro para el servicio '" + cuenta + "' con ese usuario o correo.",
-					"Registro duplicado", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-
-		modeloTabla.addRow(new Object[]{cuenta, usuario, password});
-		guardarEnArchivo();
-		limpiarCampos();
-	}
-
-	private void actualizarRegistroSeleccionado() {
-		if (!verificarAlmacenamientoDisponible())
-			return;
-		int filaVista = tabla.getSelectedRow();
-		if (filaVista == -1) {
-			mostrarMensaje("Selecciona un elemento de la lista para editar.", "Aviso", JOptionPane.INFORMATION_MESSAGE);
-			return;
-		}
-		int fila = tabla.convertRowIndexToModel(filaVista);
-		if (esFilaCabecera(fila)) {
-			mostrarMensaje("Despliega el grupo y selecciona una cuenta para editarla.", "Grupo contraído",
-					JOptionPane.INFORMATION_MESSAGE);
-			return;
-		}
-
-		String cuenta = txtCuenta.getText().trim();
-		String usuario = txtUsuario.getText().trim();
-		String password = new String(txtPassword.getPassword()).trim();
-
-		if (cuenta.isEmpty() || usuario.isEmpty() || password.isEmpty()) {
-			mostrarMensaje("Por favor completa todos los campos.", "Campos Incompletos", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-
-		if (existeServicioConCorreo(cuenta, usuario, fila)) {
-			mostrarMensaje("Ya existe otro registro para el servicio '" + cuenta + "' con ese usuario o correo.",
-					"Registro duplicado", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-
-		modeloTabla.setValueAt(cuenta, fila, 0);
-		modeloTabla.setValueAt(usuario, fila, 1);
-		modeloTabla.setValueAt(password, fila, 2);
-
-		guardarEnArchivo();
-		limpiarCampos();
-		mostrarMensaje("Registro actualizado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-	}
-
-	private void eliminarRegistro() {
-		if (!verificarAlmacenamientoDisponible())
-			return;
-		int[] filasVistaSeleccionadas = tabla.getSelectedRows();
-		if (filasVistaSeleccionadas.length > 1) {
-			List<Integer> filasModelo = new ArrayList<>();
-			for (int filaVista : filasVistaSeleccionadas) {
-				int filaModelo = tabla.convertRowIndexToModel(filaVista);
-				if (!esFilaCabecera(filaModelo)) {
-					filasModelo.add(filaModelo);
-				}
-			}
-			if (filasModelo.isEmpty()) {
-				mostrarMensaje("Selecciona al menos una contraseña para eliminar.", "Aviso",
-						JOptionPane.INFORMATION_MESSAGE);
-				return;
-			}
-			if (JOptionPane.showConfirmDialog(this,
-					"¿Eliminar las " + filasModelo.size() + " contraseñas seleccionadas?",
-					"Confirmar eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.YES_OPTION) {
-				return;
-			}
-			filasModelo.sort(java.util.Collections.reverseOrder());
-			for (int filaModelo : filasModelo) {
-				modeloTabla.removeRow(filaModelo);
-			}
-			guardarEnArchivo();
-			limpiarCampos();
-			return;
-		}
-
-		int filaVista = tabla.getSelectedRow();
-		if (filaVista != -1) {
-			int fila = tabla.convertRowIndexToModel(filaVista);
-			if (esFilaCabecera(fila)) {
-				mostrarMensaje("Despliega el grupo y selecciona una cuenta para eliminarla.", "Grupo contraído",
-						JOptionPane.INFORMATION_MESSAGE);
-				return;
-			}
-			modeloTabla.removeRow(fila);
-			guardarEnArchivo();
-			limpiarCampos();
-		} else {
-			mostrarMensaje("Selecciona una fila para eliminar.", "Aviso", JOptionPane.INFORMATION_MESSAGE);
-		}
-	}
-
-	private void limpiarCampos() {
-		limpiarCamposFormulario();
-		tabla.clearSelection();
-	}
-
-	private void limpiarCamposFormulario() {
-		txtCuenta.setText("");
-		txtUsuario.setText("");
-		txtPassword.setText("");
 	}
 
 	private void guardarEnArchivo() {
@@ -1494,6 +433,11 @@ public class GestorContrasenas extends JFrame {
 		}
 	}
 
+	private RegistroContrasena registroEnFila(int fila) {
+		return new RegistroContrasena(modeloTabla.getValueAt(fila, 0).toString(),
+				modeloTabla.getValueAt(fila, 1).toString(), modeloTabla.getValueAt(fila, 2).toString());
+	}
+
 	private void cargarDatosGuardados() {
 		try {
 			almacenContrasenas.cargar(registro -> modeloTabla
@@ -1508,6 +452,7 @@ public class GestorContrasenas extends JFrame {
 		normalizarOrdenGrupos();
 		reconstruirGruposServicios();
 		actualizarFiltroTabla();
+		actualizarResumenBoveda();
 	}
 
 	private boolean verificarAlmacenamientoDisponible() {
@@ -1517,20 +462,6 @@ public class GestorContrasenas extends JFrame {
 				"La bóveda no se cargó correctamente. No se permiten cambios para proteger los datos existentes.",
 				"Bóveda bloqueada", JOptionPane.ERROR_MESSAGE);
 		return false;
-	}
-
-	private JLabel crearEtiqueta(String texto) {
-		JLabel label = new JLabel(texto);
-		label.setFont(new Font("Segoe UI", Font.BOLD, 12));
-		return label;
-	}
-
-	private void estilarBotonIcono(JButton boton) {
-		boton.setBackground(COLOR_BOTON);
-		boton.setForeground(colorTextPrimary);
-		boton.setContentAreaFilled(false);
-		boton.setOpaque(false);
-		boton.setBorderPainted(false);
 	}
 
 	private boolean confirmarVisualizacionContrasena() {
@@ -1571,20 +502,6 @@ public class GestorContrasenas extends JFrame {
 			}
 		}
 		return true;
-	}
-
-	private JTextField crearCampoTexto() {
-		JTextField field = new JTextField();
-		field.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-		componentesEstilizados.add(field);
-		return field;
-	}
-
-	private JPasswordField crearCampoPassword() {
-		JPasswordField field = new JPasswordField();
-		field.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-		componentesEstilizados.add(field);
-		return field;
 	}
 
 	private void mostrarMensaje(String msg, String titulo, int tipo) {

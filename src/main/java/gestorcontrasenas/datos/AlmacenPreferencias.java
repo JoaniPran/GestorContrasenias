@@ -114,7 +114,7 @@ public final class AlmacenPreferencias {
 
 	private static void guardarPropiedades(Properties preferencias) throws IOException {
 		ArchivoPrivado.guardarAtomico(ARCHIVO_PREFERENCIAS,
-				writer -> preferencias.store(writer, "Preferencias locales de KeyVault"));
+				writer -> preferencias.store(writer, "Preferencias locales de Seguseña"));
 	}
 
 	private static String claveTema(String usuario) {

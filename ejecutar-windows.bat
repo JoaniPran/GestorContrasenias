@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-set "JAR_FILE=target\gestor-contrasenas-1.0.0.jar"
+set "JAR_FILE=target\segusena-1.0.0.jar"
 
 if not exist "%JAR_FILE%" (
     where mvn >nul 2>nul

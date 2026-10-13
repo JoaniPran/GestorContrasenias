@@ -16,19 +16,19 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $staging = "target\portable-input"
-$output = "portable\KeyVault"
+$output = "portable\Segusena"
 New-Item -ItemType Directory -Force -Path $staging, "portable" | Out-Null
-Copy-Item "target\gestor-contrasenas-1.0.0.jar" $staging
+Copy-Item "target\segusena-1.0.0.jar" $staging
 if (Test-Path $output) {
     Remove-Item -Recurse -Force $output
 }
 
 $jpackageArgs = @(
     "--type", "app-image",
-    "--name", "KeyVault",
+    "--name", "Segusena",
     "--app-version", "1.0.0",
     "--input", $staging,
-    "--main-jar", "gestor-contrasenas-1.0.0.jar",
+    "--main-jar", "segusena-1.0.0.jar",
     "--main-class", "gestorcontrasenas.GestorContrasenas",
     "--dest", "portable"
 )
@@ -47,11 +47,11 @@ Set fileSystem = CreateObject("Scripting.FileSystemObject")
 scriptDirectory = fileSystem.GetParentFolderName(WScript.ScriptFullName)
 shell.CurrentDirectory = scriptDirectory
 
-exitCode = shell.Run("""" & scriptDirectory & "\KeyVault.exe""", 0, True)
+exitCode = shell.Run("""" & scriptDirectory & "\Segusena.exe""", 0, True)
 If exitCode <> 0 Then
-    MsgBox "KeyVault no pudo iniciarse. Abre KeyVault.exe directamente para consultar el error.", _
-        vbExclamation, "KeyVault"
+    MsgBox "Seguseña no pudo iniciarse. Abre Segusena.exe directamente para consultar el error.", _
+        vbExclamation, "Seguseña"
 End If
 "@
-Set-Content -Path (Join-Path $output "KeyVault.vbs") -Value $launcher -Encoding ASCII
+Set-Content -Path (Join-Path $output "Segusena.vbs") -Value $launcher -Encoding ASCII
 Write-Host "Distribución portable creada en $output"

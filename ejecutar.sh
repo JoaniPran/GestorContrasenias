@@ -2,7 +2,7 @@
 set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-JAR_FILE="$ROOT_DIR/target/gestor-contrasenas-1.0.0.jar"
+JAR_FILE="$ROOT_DIR/target/segusena-1.0.0.jar"
 
 if [ ! -f "$JAR_FILE" ]; then
     (cd "$ROOT_DIR" && mvn -q -DskipTests package)

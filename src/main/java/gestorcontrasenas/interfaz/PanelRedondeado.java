@@ -8,13 +8,19 @@ import java.awt.RenderingHints;
 
 public class PanelRedondeado extends JPanel {
 	private final int radio;
+	private final boolean dibujarBorde;
 	private Color colorFondo;
 	private Color colorBorde;
 
 	public PanelRedondeado(int radio, Color fondo, Color borde) {
+		this(radio, fondo, borde, true);
+	}
+
+	public PanelRedondeado(int radio, Color fondo, Color borde, boolean dibujarBorde) {
 		this.radio = radio;
 		this.colorFondo = fondo;
 		this.colorBorde = borde;
+		this.dibujarBorde = dibujarBorde;
 		setOpaque(false);
 	}
 
@@ -30,8 +36,10 @@ public class PanelRedondeado extends JPanel {
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2.setColor(colorFondo);
 		g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radio, radio);
-		g2.setColor(colorBorde);
-		g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radio, radio);
+		if (dibujarBorde) {
+			g2.setColor(colorBorde);
+			g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radio, radio);
+		}
 		g2.dispose();
 		super.paintComponent(g);
 	}
