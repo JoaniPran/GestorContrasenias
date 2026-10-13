@@ -50,7 +50,7 @@ public final class ModeloCredenciales extends DefaultTableModel {
 	}
 
 	public int cantidadPorServicio(String servicio) {
-		return cantidadPorServicio.getOrDefault(normalizarServicio(servicio), 1);
+		return cantidadPorServicio.getOrDefault(normalizarServicio(servicio), 0);
 	}
 
 	public boolean servicioExpandido(String servicio) {
@@ -167,7 +167,7 @@ public final class ModeloCredenciales extends DefaultTableModel {
 	}
 
 	public static String normalizarServicio(String servicio) {
-		return servicio.trim().toLowerCase(Locale.ROOT);
+		return servicio == null ? "" : servicio.trim().toLowerCase(Locale.ROOT);
 	}
 
 	private boolean coincideConBusqueda(int fila, String consulta) {

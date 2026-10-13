@@ -42,6 +42,14 @@ class ModeloCredencialesTest {
 	}
 
 	@Test
+	void devuelveCeroCuandoElServicioNoExiste() {
+		ModeloCredenciales modelo = new ModeloCredenciales(() -> 0);
+
+		assertEquals(0, modelo.cantidadPorServicio("Servicio inexistente"));
+		assertEquals(0, modelo.cantidadPorServicio(null));
+	}
+
+	@Test
 	void soloLaColumnaDeContrasenaYLasFilasDeCuentaSonEditablesSinSeleccionMultiple() {
 		AtomicInteger seleccion = new AtomicInteger();
 		ModeloCredenciales modelo = new ModeloCredenciales(seleccion::get);
