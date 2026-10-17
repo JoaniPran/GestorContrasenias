@@ -63,6 +63,7 @@ public final class VistaGestorContrasenas {
 	private JLabel lblUsuario;
 	private JLabel lblPassword;
 	private JLabel lblBuscar;
+	private JLabel lblLock;
 	private JLabel lblEstadoBoveda;
 	private JLabel lblDetalleEstado;
 	private JLabel lblContadorCredenciales;
@@ -174,8 +175,8 @@ public final class VistaGestorContrasenas {
 		panelEstadoBoveda = new PanelRedondeado(16, colorTarjeta, colorBorde);
 		panelEstadoBoveda.setLayout(new BorderLayout(14, 0));
 		panelEstadoBoveda.setBorder(new EmptyBorder(14, 18, 14, 18));
-		JLabel iconoEstado = new JLabel(new FlatSVGIcon("icons/lock.svg", 24, 24));
-		iconoEstado.setBorder(new EmptyBorder(0, 2, 0, 4));
+		lblLock = crearEtiqueta("");
+		lblLock.setIcon(new FlatSVGIcon("icons/lock.svg", 24, 24));
 		JPanel textoEstado = new JPanel();
 		textoEstado.setOpaque(false);
 		textoEstado.setLayout(new BoxLayout(textoEstado, BoxLayout.Y_AXIS));
@@ -189,7 +190,7 @@ public final class VistaGestorContrasenas {
 		lblContadorCredenciales = new JLabel("0 credenciales");
 		lblContadorCredenciales.setFont(new Font("Segoe UI", Font.BOLD, 12));
 		lblContadorCredenciales.setBorder(new EmptyBorder(8, 12, 8, 12));
-		panelEstadoBoveda.add(iconoEstado, BorderLayout.WEST);
+		panelEstadoBoveda.add(lblLock, BorderLayout.WEST);
 		panelEstadoBoveda.add(textoEstado, BorderLayout.CENTER);
 		panelEstadoBoveda.add(lblContadorCredenciales, BorderLayout.EAST);
 	}
@@ -244,6 +245,7 @@ public final class VistaGestorContrasenas {
 		lblUsuario.setForeground(colorTexto);
 		lblPassword.setForeground(colorTexto);
 		lblBuscar.setForeground(colorTexto);
+		lblLock.setForeground(colorTexto);
 		lblEstadoBoveda.setForeground(almacenamientoDisponible ? colorTexto : COLOR_DANGER);
 		lblDetalleEstado.setForeground(colorTextoSecundario);
 		lblContadorCredenciales.setForeground(colorTextoSecundario);
@@ -256,6 +258,8 @@ public final class VistaGestorContrasenas {
 		btnConfiguracion.setIcon(crearIcono.apply("icons/settings.svg", 16));
 		lblBuscar.setForeground(tintaEncabezado);
 		lblBuscar.setIcon(crearIcono.apply("icons/search.svg", 14));
+		lblLock.setForeground(tintaEncabezado);
+		lblLock.setIcon(crearIcono.apply("icons/lock.svg", 24));
 	}
 
 	private void aplicarEstiloCampos(Color colorEntrada, Color colorTexto, Color colorBorde) {
