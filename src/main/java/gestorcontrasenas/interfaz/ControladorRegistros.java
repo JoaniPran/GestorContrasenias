@@ -24,8 +24,8 @@ public final class ControladorRegistros {
 	private final Runnable guardarCambios;
 	private final Presentador presentador;
 
-	public ControladorRegistros(JTable tabla, ModeloCredenciales modelo, JTextField cuenta,
-			JTextField usuario, JPasswordField contrasena, ServicioCredenciales servicio, AccesoBoveda accesoBoveda,
+	public ControladorRegistros(JTable tabla, ModeloCredenciales modelo, JTextField cuenta, JTextField usuario,
+			JPasswordField contrasena, ServicioCredenciales servicio, AccesoBoveda accesoBoveda,
 			Runnable guardarCambios, Presentador presentador) {
 		this.tabla = Objects.requireNonNull(tabla, "tabla");
 		this.modelo = Objects.requireNonNull(modelo, "modelo");
@@ -56,8 +56,9 @@ public final class ControladorRegistros {
 			return;
 		}
 		if (existeDuplicado(registro, -1)) {
-			presentador.mostrar("Ya existe un registro para el servicio '" + registro.getCuenta()
-					+ "' con ese usuario o correo.", "Registro duplicado", JOptionPane.WARNING_MESSAGE);
+			presentador.mostrar(
+					"Ya existe un registro para el servicio '" + registro.getCuenta() + "' con ese usuario o correo.",
+					"Registro duplicado", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		modelo.addRow(new Object[]{registro.getCuenta(), registro.getUsuario(), registro.getPassword()});
@@ -71,14 +72,14 @@ public final class ControladorRegistros {
 		}
 		int filaVista = tabla.getSelectedRow();
 		if (filaVista < 0) {
-			presentador.mostrar("Selecciona un elemento de la lista para editarla.",
-					"Aviso", JOptionPane.INFORMATION_MESSAGE);
+			presentador.mostrar("Selecciona un elemento de la lista para editarla.", "Aviso",
+					JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
 		int fila = tabla.convertRowIndexToModel(filaVista);
 		if (modelo.esFilaCabecera(fila)) {
-			presentador.mostrar("Despliega el grupo y selecciona una cuenta para editarla.",
-					"Grupo contraído", JOptionPane.INFORMATION_MESSAGE);
+			presentador.mostrar("Despliega el grupo y selecciona una cuenta para editarla.", "Grupo contraído",
+					JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
 		RegistroContrasena registro = leerFormulario();
@@ -86,8 +87,9 @@ public final class ControladorRegistros {
 			return;
 		}
 		if (existeDuplicado(registro, fila)) {
-			presentador.mostrar("Ya existe otro registro para el servicio '" + registro.getCuenta()
-					+ "' con ese usuario o correo.", "Registro duplicado", JOptionPane.WARNING_MESSAGE);
+			presentador.mostrar(
+					"Ya existe otro registro para el servicio '" + registro.getCuenta() + "' con ese usuario o correo.",
+					"Registro duplicado", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		modelo.setValueAt(registro.getCuenta(), fila, 0);
@@ -112,8 +114,8 @@ public final class ControladorRegistros {
 				}
 			}
 			if (filasModelo.isEmpty()) {
-				presentador.mostrar("Selecciona al menos una contraseña para eliminar.",
-						"Aviso", JOptionPane.INFORMATION_MESSAGE);
+				presentador.mostrar("Selecciona al menos una contraseña para eliminar.", "Aviso",
+						JOptionPane.INFORMATION_MESSAGE);
 				return;
 			}
 			if (!presentador.confirmarEliminacion(filasModelo.size())) {
@@ -134,8 +136,8 @@ public final class ControladorRegistros {
 		}
 		int fila = tabla.convertRowIndexToModel(filasVista[0]);
 		if (modelo.esFilaCabecera(fila)) {
-			presentador.mostrar("Despliega el grupo y selecciona una cuenta para eliminarla.",
-					"Grupo contraído", JOptionPane.INFORMATION_MESSAGE);
+			presentador.mostrar("Despliega el grupo y selecciona una cuenta para eliminarla.", "Grupo contraído",
+					JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
 		modelo.removeRow(fila);
@@ -177,8 +179,8 @@ public final class ControladorRegistros {
 		try {
 			String passwordActual = new String(passwordChars);
 			if (cuentaActual.isEmpty() || usuarioActual.isEmpty() || passwordActual.isEmpty()) {
-				presentador.mostrar("Por favor completa todos los campos.",
-						"Campos Incompletos", JOptionPane.WARNING_MESSAGE);
+				presentador.mostrar("Por favor completa todos los campos.", "Campos Incompletos",
+						JOptionPane.WARNING_MESSAGE);
 				return null;
 			}
 			return new RegistroContrasena(cuentaActual, usuarioActual, passwordActual);

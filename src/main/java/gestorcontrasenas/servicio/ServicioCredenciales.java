@@ -50,8 +50,8 @@ public final class ServicioCredenciales {
 				agregados++;
 			} else {
 				RegistroContrasena existente = combinados.get(indiceExistente);
-				combinados.set(indiceExistente, new RegistroContrasena(
-						existente.getCuenta(), existente.getUsuario(), importado.getPassword()));
+				combinados.set(indiceExistente,
+						new RegistroContrasena(existente.getCuenta(), existente.getUsuario(), importado.getPassword()));
 				reemplazados++;
 			}
 		}

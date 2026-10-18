@@ -107,7 +107,8 @@ public class DialogoRegistroUsuario extends JDialog {
 				return;
 			}
 			if (!AlmacenUsuarios.esNombreUsuarioValido(usuario)) {
-				mostrarError("El usuario debe tener entre 1 y 64 caracteres. Puede usar letras; @, números, puntos, guiones y guiones bajos son opcionales.",
+				mostrarError(
+						"El usuario debe tener entre 1 y 64 caracteres. Puede usar letras; @, números, puntos, guiones y guiones bajos son opcionales.",
 						"Usuario no válido");
 				return;
 			}

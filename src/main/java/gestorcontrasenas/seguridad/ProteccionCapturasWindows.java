@@ -22,8 +22,7 @@ public final class ProteccionCapturasWindows {
 		}
 
 		User32 user32 = Native.load("user32", User32.class);
-		if (!user32.SetWindowDisplayAffinity(Pointer.createConstant(identificadorVentana),
-				WDA_EXCLUDEFROMCAPTURE)) {
+		if (!user32.SetWindowDisplayAffinity(Pointer.createConstant(identificadorVentana), WDA_EXCLUDEFROMCAPTURE)) {
 			throw new IllegalStateException("Windows rechazó la exclusión de la ventana de las capturas.");
 		}
 	}

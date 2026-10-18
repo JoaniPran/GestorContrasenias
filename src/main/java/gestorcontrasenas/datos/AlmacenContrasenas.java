@@ -96,16 +96,16 @@ public final class AlmacenContrasenas {
 		try {
 			guardar(registros);
 		} catch (Exception e) {
-			throw new IOException("No se pudo migrar la bóveda al archivo único del usuario. "
-					+ "El archivo original se conservó.", e);
+			throw new IOException(
+					"No se pudo migrar la bóveda al archivo único del usuario. " + "El archivo original se conservó.",
+					e);
 		}
 		for (RegistroContrasena registro : registros) {
 			alCargarRegistro.accept(registro);
 		}
 	}
 
-	private void cargarArchivo(List<String> lineas, Consumer<RegistroContrasena> alCargarRegistro)
-			throws IOException {
+	private void cargarArchivo(List<String> lineas, Consumer<RegistroContrasena> alCargarRegistro) throws IOException {
 		List<RegistroContrasena> registros = cargarRegistros(lineas);
 		for (RegistroContrasena registro : registros) {
 			alCargarRegistro.accept(registro);

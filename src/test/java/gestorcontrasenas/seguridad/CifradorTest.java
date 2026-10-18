@@ -30,8 +30,7 @@ class CifradorTest {
 		byte[] cifrado = Cifrador.encriptarGcm("contenido", clave, nonce, "contexto");
 		cifrado[0] ^= 1;
 
-		assertThrows(AEADBadTagException.class,
-				() -> Cifrador.desencriptarGcm(cifrado, clave, nonce, "contexto"));
+		assertThrows(AEADBadTagException.class, () -> Cifrador.desencriptarGcm(cifrado, clave, nonce, "contexto"));
 	}
 
 	@Test
@@ -66,11 +65,8 @@ class CifradorTest {
 		byte[] nonce = Cifrador.generarBytesAleatorios(12);
 		assertThrows(IllegalArgumentException.class,
 				() -> Cifrador.derivarClave("clave", new byte[8], Cifrador.ITERACIONES_PBKDF2));
-		assertThrows(IllegalArgumentException.class,
-				() -> Cifrador.derivarClave("clave", new byte[16], 1));
-		assertThrows(IllegalArgumentException.class,
-				() -> Cifrador.encriptarGcm("texto", new byte[16], nonce, "aad"));
-		assertThrows(IllegalArgumentException.class,
-				() -> Cifrador.encriptarGcm("texto", clave, new byte[8], "aad"));
+		assertThrows(IllegalArgumentException.class, () -> Cifrador.derivarClave("clave", new byte[16], 1));
+		assertThrows(IllegalArgumentException.class, () -> Cifrador.encriptarGcm("texto", new byte[16], nonce, "aad"));
+		assertThrows(IllegalArgumentException.class, () -> Cifrador.encriptarGcm("texto", clave, new byte[8], "aad"));
 	}
 }

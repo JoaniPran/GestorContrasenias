@@ -78,8 +78,7 @@ public final class TemaColores {
 	}
 
 	private static Color mezclar(Color base, Color resaltado, float intensidad) {
-		return new Color(
-				Math.round(base.getRed() * (1 - intensidad) + resaltado.getRed() * intensidad),
+		return new Color(Math.round(base.getRed() * (1 - intensidad) + resaltado.getRed() * intensidad),
 				Math.round(base.getGreen() * (1 - intensidad) + resaltado.getGreen() * intensidad),
 				Math.round(base.getBlue() * (1 - intensidad) + resaltado.getBlue() * intensidad));
 	}

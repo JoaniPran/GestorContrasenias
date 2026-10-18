@@ -14,10 +14,13 @@ import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Window;
 import java.util.Objects;
-import javax.swing.ButtonGroup;
+import java.util.function.BiFunction;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.Icon;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -25,18 +28,14 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
-import java.awt.Window;
 
 public final class DialogoConfiguracion {
-	private static final Color[] COLORES_RESALTADO = {
-			new Color(0, 122, 204), new Color(46, 139, 139), new Color(76, 145, 0), new Color(202, 145, 0),
-			new Color(225, 77, 35), new Color(220, 45, 67), new Color(184, 65, 165), new Color(112, 91, 205),
-			new Color(94, 119, 102), new Color(164, 129, 88), Color.BLACK
-	};
-	private static final String[] NOMBRES_RESALTADO = {
-			"Azul", "Turquesa", "Verde", "Amarillo", "Naranja", "Rojo", "Rosa", "Violeta",
-			"Verde grisáceo", "Arena", "Negro"
-	};
+	private static final Color[] COLORES_RESALTADO = {new Color(0, 122, 204), new Color(46, 139, 139),
+			new Color(76, 145, 0), new Color(202, 145, 0), new Color(225, 77, 35), new Color(220, 45, 67),
+			new Color(184, 65, 165), new Color(112, 91, 205), new Color(94, 119, 102), new Color(164, 129, 88),
+			Color.BLACK};
+	private static final String[] NOMBRES_RESALTADO = {"Azul", "Turquesa", "Verde", "Amarillo", "Naranja", "Rojo",
+			"Rosa", "Violeta", "Verde grisáceo", "Arena", "Negro"};
 
 	private final Window propietario;
 	private final boolean modoOscuro;
@@ -47,10 +46,13 @@ public final class DialogoConfiguracion {
 	private final Color colorTextPrimary;
 	private final Color colorTextMuted;
 	private final AplicadorPreferencias aplicador;
+	private final Runnable accionExportar;
+	private final BiFunction<String, Integer, ? extends Icon> crearIcono; // <-- Recibimos la función reutilizada
 
 	public DialogoConfiguracion(Window propietario, boolean modoOscuro, boolean confirmarAntesDeMostrarContrasena,
 			Color colorResaltado, Color colorCard, Color colorInput, Color colorTextPrimary, Color colorTextMuted,
-			AplicadorPreferencias aplicador) {
+			AplicadorPreferencias aplicador, Runnable accionExportar,
+			BiFunction<String, Integer, ? extends Icon> crearIcono) {
 		this.propietario = Objects.requireNonNull(propietario, "propietario");
 		this.modoOscuro = modoOscuro;
 		this.confirmarAntesDeMostrarContrasena = confirmarAntesDeMostrarContrasena;
@@ -60,6 +62,8 @@ public final class DialogoConfiguracion {
 		this.colorTextPrimary = Objects.requireNonNull(colorTextPrimary, "colorTextPrimary");
 		this.colorTextMuted = Objects.requireNonNull(colorTextMuted, "colorTextMuted");
 		this.aplicador = Objects.requireNonNull(aplicador, "aplicador");
+		this.accionExportar = accionExportar;
+		this.crearIcono = crearIcono;
 	}
 
 	public void mostrar() {
@@ -89,8 +93,8 @@ public final class DialogoConfiguracion {
 		InterruptorTema interruptor = new InterruptorTema(modoOscuro, colorResaltado);
 		interruptor.setToolTipText("Cambiar entre modo oscuro y modo claro");
 		interruptor.getAccessibleContext().setAccessibleName("Cambiar tema");
-		interruptor.addActionListener(e -> etiquetaModo
-				.setText(interruptor.isSelected() ? "Modo oscuro" : "Modo claro"));
+		interruptor
+				.addActionListener(e -> etiquetaModo.setText(interruptor.isSelected() ? "Modo oscuro" : "Modo claro"));
 
 		JPanel selector = new JPanel(new BorderLayout(10, 0));
 		selector.setOpaque(true);
@@ -117,8 +121,7 @@ public final class DialogoConfiguracion {
 		ButtonGroup grupoColores = new ButtonGroup();
 		for (int i = 0; i < COLORES_RESALTADO.length; i++) {
 			Color color = COLORES_RESALTADO[i];
-			SelectorColor selectorColor = new SelectorColor(color, NOMBRES_RESALTADO[i],
-					color.equals(colorResaltado));
+			SelectorColor selectorColor = new SelectorColor(color, NOMBRES_RESALTADO[i], color.equals(colorResaltado));
 			grupoColores.add(selectorColor);
 			muestras.add(selectorColor);
 			selectorColor.addActionListener(e -> {
@@ -138,6 +141,31 @@ public final class DialogoConfiguracion {
 		confirmarPassword.setToolTipText("Puedes cambiar esta opción en cualquier momento desde Configuración");
 		confirmarPassword.setAlignmentX(Component.LEFT_ALIGNMENT);
 		opciones.add(confirmarPassword);
+
+		// --- SECCIÓN DE COPIA DE SEGURIDAD ---
+		if (accionExportar != null) {
+			opciones.add(Box.createVerticalStrut(16));
+
+			JLabel etiquetaExportar = new JLabel("Copia de seguridad");
+			etiquetaExportar.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 12));
+			etiquetaExportar.setForeground(colorTextPrimary);
+			etiquetaExportar.setAlignmentX(Component.LEFT_ALIGNMENT);
+			opciones.add(etiquetaExportar);
+			opciones.add(Box.createVerticalStrut(6));
+
+			BotonEstilizado btnExportar = new BotonEstilizado(" Exportar contraseñas (.csv)", COLOR_PRIMARY,
+					COLOR_PRIMARY_HOVER, 8);
+			btnExportar.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+
+			if (crearIcono != null) {
+				btnExportar.setIcon(crearIcono.apply("icons/external-link.svg", 14));
+			}
+
+			btnExportar.addActionListener(e -> accionExportar.run());
+			opciones.add(btnExportar);
+		}
+
 		panel.add(opciones, BorderLayout.CENTER);
 
 		BotonEstilizado aplicar = new BotonEstilizado("Aplicar", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);

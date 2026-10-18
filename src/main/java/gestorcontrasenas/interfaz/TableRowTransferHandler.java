@@ -59,8 +59,7 @@ public class TableRowTransferHandler extends TransferHandler {
 		int targetRow = dl.getRow();
 		try {
 			int sourceRow = (Integer) info.getTransferable().getTransferData(flavor);
-			if (sourceRow < 0 || sourceRow >= table.getRowCount() || targetRow < 0
-					|| targetRow > table.getRowCount()) {
+			if (sourceRow < 0 || sourceRow >= table.getRowCount() || targetRow < 0 || targetRow > table.getRowCount()) {
 				return false;
 			}
 			return alReordenar.test(sourceRow, targetRow);

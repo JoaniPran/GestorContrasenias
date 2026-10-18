@@ -18,7 +18,7 @@ import java.util.Map;
 public final class ImportadorContrasenasGoogle {
 	private static final long TAMANO_MAXIMO_BYTES = 50L * 1024 * 1024;
 	private static final int MAXIMO_REGISTROS = 100_000;
-	private static final List<String> COLUMNAS_GOOGLE = Arrays.asList("name", "url", "username", "password", "note");
+	private static final List<String> COLUMNAS_GOOGLE = Arrays.asList("name", "username", "password");
 
 	private ImportadorContrasenasGoogle() {
 	}
@@ -35,10 +35,8 @@ public final class ImportadorContrasenasGoogle {
 		}
 		String contenido;
 		try {
-			contenido = StandardCharsets.UTF_8.newDecoder()
-					.onMalformedInput(CodingErrorAction.REPORT)
-					.onUnmappableCharacter(CodingErrorAction.REPORT)
-					.decode(ByteBuffer.wrap(bytes)).toString();
+			contenido = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+					.onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
 		} catch (CharacterCodingException e) {
 			throw new IOException("El archivo no contiene texto UTF-8 válido.", e);
 		}
@@ -81,8 +79,8 @@ public final class ImportadorContrasenasGoogle {
 				continue;
 			}
 			if (fila.size() != cabeceras.size()) {
-				throw new IOException("La fila " + (indice + 1) + " tiene " + fila.size()
-						+ " campos; se esperaban " + cabeceras.size() + ". No se importó ningún dato.");
+				throw new IOException("La fila " + (indice + 1) + " tiene " + fila.size() + " campos; se esperaban "
+						+ cabeceras.size() + ". No se importó ningún dato.");
 			}
 
 			String nombre = fila.get(indiceName).trim();
@@ -146,8 +144,7 @@ public final class ImportadorContrasenasGoogle {
 				campo.setLength(0);
 				comillasCerradas = false;
 				hayContenidoFila = false;
-				if (caracter == '\r' && indice + 1 < contenido.length()
-						&& contenido.charAt(indice + 1) == '\n') {
+				if (caracter == '\r' && indice + 1 < contenido.length() && contenido.charAt(indice + 1) == '\n') {
 					indice++;
 				}
 			} else {

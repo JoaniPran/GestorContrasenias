@@ -16,13 +16,13 @@ class ServicioCredencialesTest {
 
 	@Test
 	void detectaDuplicadosIgnorandoMayusculasYEspacios() {
-		List<RegistroContrasena> registros = Collections.singletonList(
-				new RegistroContrasena("  Correo ", " Persona@ejemplo.com ", "secreta"));
+		List<RegistroContrasena> registros = Collections
+				.singletonList(new RegistroContrasena("  Correo ", " Persona@ejemplo.com ", "secreta"));
 
-		assertTrue(servicio.existeDuplicado(registros,
-				new RegistroContrasena("correo", "persona@EJEMPLO.com", "otra"), -1));
-		assertFalse(servicio.existeDuplicado(registros,
-				new RegistroContrasena("correo", "otra@ejemplo.com", "otra"), -1));
+		assertTrue(servicio.existeDuplicado(registros, new RegistroContrasena("correo", "persona@EJEMPLO.com", "otra"),
+				-1));
+		assertFalse(
+				servicio.existeDuplicado(registros, new RegistroContrasena("correo", "otra@ejemplo.com", "otra"), -1));
 	}
 
 	@Test
@@ -33,14 +33,14 @@ class ServicioCredencialesTest {
 
 		assertFalse(servicio.existeDuplicado(registros,
 				new RegistroContrasena(" correo ", "PERSONA@ejemplo.com", "nueva"), 0));
-		assertTrue(servicio.existeDuplicado(registros,
-				new RegistroContrasena("BANCO", "persona@ejemplo.com", "nueva"), 0));
+		assertTrue(servicio.existeDuplicado(registros, new RegistroContrasena("BANCO", "persona@ejemplo.com", "nueva"),
+				0));
 	}
 
 	@Test
 	void importaNuevosYReemplazaLaClaveExistenteSinAlterarLaListaOriginal() {
-		List<RegistroContrasena> actuales = Collections.singletonList(
-				new RegistroContrasena("Correo", "persona@ejemplo.com", "anterior"));
+		List<RegistroContrasena> actuales = Collections
+				.singletonList(new RegistroContrasena("Correo", "persona@ejemplo.com", "anterior"));
 		List<RegistroContrasena> importados = Arrays.asList(
 				new RegistroContrasena(" correo ", " PERSONA@ejemplo.com ", "actualizada"),
 				new RegistroContrasena("Banco", "persona@ejemplo.com", "nueva"));
@@ -57,12 +57,11 @@ class ServicioCredencialesTest {
 
 	@Test
 	void reemplazosRepetidosEnElArchivoSeAplicanEnOrden() {
-		List<RegistroContrasena> importados = Arrays.asList(
-				new RegistroContrasena("Servicio", "usuario", "primera"),
+		List<RegistroContrasena> importados = Arrays.asList(new RegistroContrasena("Servicio", "usuario", "primera"),
 				new RegistroContrasena("servicio", " USUARIO ", "ultima"));
 
-		ServicioCredenciales.ResultadoImportacion resultado = servicio.combinarImportacion(
-				Collections.emptyList(), importados);
+		ServicioCredenciales.ResultadoImportacion resultado = servicio.combinarImportacion(Collections.emptyList(),
+				importados);
 
 		assertEquals(1, resultado.getAgregados());
 		assertEquals(1, resultado.getReemplazados());

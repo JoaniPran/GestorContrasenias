@@ -29,13 +29,11 @@ public final class ModeloCredenciales extends DefaultTableModel {
 
 	@Override
 	public boolean isCellEditable(int row, int column) {
-		return column == 2 && filasSeleccionadas.getAsInt() <= 1
-				&& !esFilaCabecera(row) && !esEncabezadoContraido(row);
+		return column == 2 && filasSeleccionadas.getAsInt() <= 1 && !esFilaCabecera(row) && !esEncabezadoContraido(row);
 	}
 
 	public boolean esFilaCabecera(int fila) {
-		return fila >= 0 && fila < getRowCount()
-				&& getValueAt(fila, 1) == null && getValueAt(fila, 2) == null;
+		return fila >= 0 && fila < getRowCount() && getValueAt(fila, 1) == null && getValueAt(fila, 2) == null;
 	}
 
 	public boolean esEncabezadoContraido(int fila) {
@@ -111,8 +109,8 @@ public final class ModeloCredenciales extends DefaultTableModel {
 	}
 
 	public boolean reordenarGrupoDesdeVista(JTable tabla, int filaOrigenVista, int filaDestinoVista) {
-		if (filaOrigenVista < 0 || filaOrigenVista >= tabla.getRowCount()
-				|| filaDestinoVista < 0 || filaDestinoVista > tabla.getRowCount()) {
+		if (filaOrigenVista < 0 || filaOrigenVista >= tabla.getRowCount() || filaDestinoVista < 0
+				|| filaDestinoVista > tabla.getRowCount()) {
 			return false;
 		}
 
@@ -162,8 +160,8 @@ public final class ModeloCredenciales extends DefaultTableModel {
 	}
 
 	public RegistroContrasena registroEnFila(int fila) {
-		return new RegistroContrasena(getValueAt(fila, 0).toString(),
-				getValueAt(fila, 1).toString(), getValueAt(fila, 2).toString());
+		return new RegistroContrasena(getValueAt(fila, 0).toString(), getValueAt(fila, 1).toString(),
+				getValueAt(fila, 2).toString());
 	}
 
 	public static String normalizarServicio(String servicio) {
@@ -189,14 +187,14 @@ public final class ModeloCredenciales extends DefaultTableModel {
 				continue;
 			}
 			String servicio = normalizarServicio(getValueAt(fila, 0).toString());
-			grupos.computeIfAbsent(servicio, clave -> new ArrayList<>()).add(new Object[]{
-					getValueAt(fila, 0), getValueAt(fila, 1), getValueAt(fila, 2)});
+			grupos.computeIfAbsent(servicio, clave -> new ArrayList<>())
+					.add(new Object[]{getValueAt(fila, 0), getValueAt(fila, 1), getValueAt(fila, 2)});
 		}
 		return grupos;
 	}
 
-	private void reemplazarConOrden(List<String> orden, Map<String, List<Object[]>> grupos,
-			String servicioMovido, List<Object[]> grupoMovido) {
+	private void reemplazarConOrden(List<String> orden, Map<String, List<Object[]>> grupos, String servicioMovido,
+			List<Object[]> grupoMovido) {
 		setRowCount(0);
 		for (String servicio : orden) {
 			List<Object[]> registros = servicio.equals(servicioMovido) ? grupoMovido : grupos.get(servicio);

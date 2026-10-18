@@ -69,8 +69,8 @@ public final class ColumnaContrasena {
 			String texto = String.valueOf(valor);
 			contrasena.setText(encabezado ? "" : visible ? texto : acciones.ocultar(texto));
 			botones.setVisible(!encabezado);
-			visibilidad.setIcon(encabezado ? null : acciones.icono(
-					visible ? "icons/eye-off.svg" : "icons/eye.svg", 16));
+			visibilidad
+					.setIcon(encabezado ? null : acciones.icono(visible ? "icons/eye-off.svg" : "icons/eye.svg", 16));
 			copiar.setIcon(encabezado ? null : acciones.icono("icons/copy.svg", 16));
 			Color foreground = seleccionado ? tabla.getSelectionForeground() : tabla.getForeground();
 			setBackground(seleccionado ? tabla.getSelectionBackground() : tabla.getBackground());

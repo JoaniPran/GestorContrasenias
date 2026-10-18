@@ -49,16 +49,15 @@ public final class DialogoImportacionGoogle {
 		contenido.setBorder(new EmptyBorder(18, 20, 16, 20));
 		contenido.setBackground(colorCard);
 
-		JLabel instrucciones = new JLabel(
-				"<html>Arrastra aquí un archivo .csv de Google Password Manager.<br>"
-						+ "Se leerán las columnas name, username y password.</html>");
+		JLabel instrucciones = new JLabel("<html>Arrastra aquí un archivo .csv de Google Password Manager.<br>"
+				+ "Se leerán las columnas name, username y password.</html>");
 		instrucciones.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		instrucciones.setForeground(colorTextPrimary);
 		instrucciones.setHorizontalAlignment(SwingConstants.CENTER);
 		instrucciones.setOpaque(true);
 		instrucciones.setBackground(colorInput);
-		instrucciones.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(colorBorder, 1, true), new EmptyBorder(24, 18, 24, 18)));
+		instrucciones.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(colorBorder, 1, true),
+				new EmptyBorder(24, 18, 24, 18)));
 		instrucciones.setTransferHandler(new TransferHandler() {
 			@Override
 			public boolean canImport(TransferSupport support) {
@@ -79,8 +78,7 @@ public final class DialogoImportacionGoogle {
 					}
 					return importador.importar(((File) ((List<?>) datos).get(0)).toPath(), dialogo);
 				} catch (Exception e) {
-					JOptionPane.showMessageDialog(dialogo,
-							"No se pudo leer el archivo soltado: " + e.getMessage(),
+					JOptionPane.showMessageDialog(dialogo, "No se pudo leer el archivo soltado: " + e.getMessage(),
 							"Error de importación", JOptionPane.ERROR_MESSAGE);
 					return false;
 				}
@@ -88,8 +86,8 @@ public final class DialogoImportacionGoogle {
 		});
 		contenido.add(instrucciones, BorderLayout.CENTER);
 
-		BotonEstilizado seleccionar = new BotonEstilizado("Seleccionar archivo .csv", COLOR_BOTON,
-				COLOR_BOTON_HOVER, 8);
+		BotonEstilizado seleccionar = new BotonEstilizado("Seleccionar archivo .csv", COLOR_BOTON, COLOR_BOTON_HOVER,
+				8);
 		seleccionar.setIcon(crearIcono("icons/folder.svg", 16));
 		seleccionar.addActionListener(e -> {
 			JFileChooser selector = new JFileChooser();

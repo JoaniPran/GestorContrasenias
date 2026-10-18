@@ -60,8 +60,7 @@ class AlmacenContrasenasTest {
 		nuevo.guardar(registros("Cuenta A", "usuario-a", "clave-a"));
 		Path archivoLegacy = directorio.resolve("contrasenas_anaperez.csv");
 		Files.move(localizarArchivoUnico(), archivoLegacy, StandardCopyOption.REPLACE_EXISTING);
-		Files.write(directorio.resolve("usuarios.csv"),
-				"ana.perez;hash-a".getBytes(StandardCharsets.UTF_8));
+		Files.write(directorio.resolve("usuarios.csv"), "ana.perez;hash-a".getBytes(StandardCharsets.UTF_8));
 
 		AlmacenContrasenas almacenMigrado = new AlmacenContrasenas("ana.perez", "clave maestra segura", directorio);
 		assertRegistro(cargar(almacenMigrado), "Cuenta A", "usuario-a", "clave-a");
@@ -98,8 +97,8 @@ class AlmacenContrasenasTest {
 		byte[] archivoAlterado = Files.readAllBytes(archivo);
 		List<RegistroContrasena> cargados = new ArrayList<>();
 
-		assertThrows(IOException.class, () -> new AlmacenContrasenas("persona", "clave correcta", directorio)
-				.cargar(cargados::add));
+		assertThrows(IOException.class,
+				() -> new AlmacenContrasenas("persona", "clave correcta", directorio).cargar(cargados::add));
 
 		assertTrue(cargados.isEmpty());
 		assertArrayEquals(archivoAlterado, Files.readAllBytes(archivo));
@@ -142,8 +141,8 @@ class AlmacenContrasenasTest {
 
 	private Path localizarArchivoUnico() throws IOException {
 		try (Stream<Path> archivos = Files.list(directorio)) {
-			return archivos.filter(path -> path.getFileName().toString().startsWith("contrasenas_usuario_"))
-					.findFirst().orElseThrow(() -> new AssertionError("No se creó la bóveda del usuario"));
+			return archivos.filter(path -> path.getFileName().toString().startsWith("contrasenas_usuario_")).findFirst()
+					.orElseThrow(() -> new AssertionError("No se creó la bóveda del usuario"));
 		}
 	}
 

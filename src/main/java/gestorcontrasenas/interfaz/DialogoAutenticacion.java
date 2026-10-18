@@ -107,8 +107,9 @@ public class DialogoAutenticacion extends JDialog {
 					try {
 						AlmacenPreferencias.guardarUsuarioRecordado(recordarUsuario.isSelected() ? u : "");
 					} catch (IOException ex) {
-						JOptionPane.showMessageDialog(this, "No se pudo guardar la preferencia de usuario: "
-								+ ex.getMessage(), "Advertencia", JOptionPane.WARNING_MESSAGE);
+						JOptionPane.showMessageDialog(this,
+								"No se pudo guardar la preferencia de usuario: " + ex.getMessage(), "Advertencia",
+								JOptionPane.WARNING_MESSAGE);
 					}
 					usuarioAutenticado = u;
 					claveMaestra = autenticacion.getClaveMaestra();

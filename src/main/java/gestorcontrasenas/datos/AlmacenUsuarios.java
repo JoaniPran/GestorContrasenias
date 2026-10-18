@@ -125,7 +125,9 @@ public final class AlmacenUsuarios {
 				String[] partes = lineas.get(i).split(";", 2);
 				if (partes.length >= 2 && partes[0].equalsIgnoreCase(user.trim())) {
 					String claveMaestra = new String(pass);
-					String contrasena = Cifrador.esHashConEspaciosExactos(partes[1]) ? claveMaestra : claveMaestra.trim();
+					String contrasena = Cifrador.esHashConEspaciosExactos(partes[1])
+							? claveMaestra
+							: claveMaestra.trim();
 					char[] contrasenaVerificacion = contrasena.toCharArray();
 					try {
 						if (Cifrador.verificarPassword(contrasenaVerificacion, partes[1])) {

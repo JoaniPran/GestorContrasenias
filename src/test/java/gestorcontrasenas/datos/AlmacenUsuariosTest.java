@@ -28,12 +28,11 @@ class AlmacenUsuariosTest {
 	@Test
 	void lasCuentasAntiguasConservanLaClaveMaestraEfectivaAlMigrar() throws Exception {
 		Path archivoUsuarios = directorio.resolve("usuarios.csv");
-		Files.write(archivoUsuarios,
-				("persona;" + Cifrador.hashSHA256("clave antigua") + System.lineSeparator())
-						.getBytes(StandardCharsets.UTF_8));
+		Files.write(archivoUsuarios, ("persona;" + Cifrador.hashSHA256("clave antigua") + System.lineSeparator())
+				.getBytes(StandardCharsets.UTF_8));
 
-		AlmacenUsuarios.ResultadoAutenticacion resultado =
-				AlmacenUsuarios.autenticar("persona", "  clave antigua  ", archivoUsuarios);
+		AlmacenUsuarios.ResultadoAutenticacion resultado = AlmacenUsuarios.autenticar("persona", "  clave antigua  ",
+				archivoUsuarios);
 
 		assertEquals("clave antigua", resultado.getClaveMaestra());
 		String hashMigrado = Files.readAllLines(archivoUsuarios, StandardCharsets.UTF_8).get(0).split(";", 2)[1];

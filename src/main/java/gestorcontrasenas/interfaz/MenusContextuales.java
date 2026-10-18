@@ -129,8 +129,7 @@ public final class MenusContextuales {
 		JMenuItem itemPegar = new JMenuItem("📌 Pegar");
 		JMenuItem itemSeleccionarTodo = new JMenuItem("🔍 Seleccionar todo");
 		JMenuItem itemCopiar = new JMenuItem("Copiar contraseña", new FlatSVGIcon("icons/copy.svg", 16, 16));
-		itemCopiar.addActionListener(e -> copiarContrasenaAlPortapapeles(
-				new String(campo.getPassword()), itemCopiar));
+		itemCopiar.addActionListener(e -> copiarContrasenaAlPortapapeles(new String(campo.getPassword()), itemCopiar));
 		itemPegar.addActionListener(e -> campo.paste());
 		itemSeleccionarTodo.addActionListener(e -> campo.selectAll());
 		menu.add(itemCopiar);
@@ -167,8 +166,7 @@ public final class MenusContextuales {
 	public static void agregarMenuTabla(JTable tabla, int columnaSensible) {
 		JPopupMenu menu = new JPopupMenu();
 		JMenuItem itemCopiarCelda = new JMenuItem("Copiar dato de la celda", new FlatSVGIcon("icons/copy.svg", 16, 16));
-		JMenuItem itemCopiarContrasena = new JMenuItem("Copiar contraseña",
-				new FlatSVGIcon("icons/copy.svg", 16, 16));
+		JMenuItem itemCopiarContrasena = new JMenuItem("Copiar contraseña", new FlatSVGIcon("icons/copy.svg", 16, 16));
 
 		itemCopiarCelda.addActionListener(e -> {
 			int row = tabla.getSelectedRow();
@@ -257,8 +255,7 @@ public final class MenusContextuales {
 			seleccionContrasenaPendiente = seleccion;
 		}
 
-		Timer temporizadorLimpieza = new Timer(30_000,
-				e -> limpiarPortapapelesSiCoincide(portapapeles, seleccion));
+		Timer temporizadorLimpieza = new Timer(30_000, e -> limpiarPortapapelesSiCoincide(portapapeles, seleccion));
 		temporizadorLimpieza.setRepeats(false);
 		temporizadorLimpieza.start();
 
@@ -271,8 +268,7 @@ public final class MenusContextuales {
 			if (contenido == seleccion || contieneLaMismaContrasena(contenido, seleccion)) {
 				portapapeles.setContents(new StringSelection(""), null);
 			}
-			if (portapapelesContrasenaPendiente == portapapeles
-					&& seleccionContrasenaPendiente == seleccion) {
+			if (portapapelesContrasenaPendiente == portapapeles && seleccionContrasenaPendiente == seleccion) {
 				portapapelesContrasenaPendiente = null;
 				seleccionContrasenaPendiente = null;
 			}

@@ -21,18 +21,17 @@ public final class Dialogos {
 		UIManager.put("OptionPane.messageForeground", texto);
 	}
 
-	public static void mostrarMensaje(Component padre, String mensaje, String titulo, int tipo,
-			Color fondo, Color texto) {
+	public static void mostrarMensaje(Component padre, String mensaje, String titulo, int tipo, Color fondo,
+			Color texto) {
 		configurarEstilo(fondo, texto);
 		JOptionPane.showMessageDialog(padre, mensaje, titulo, tipo);
 	}
 
-	public static int mostrarOpcion(Component padre, Object mensaje, String titulo, int optionType,
-			int messageType, Color fondo, Color texto, Object[] opciones, Object opcionInicial,
-			Icon icono) {
+	public static int mostrarOpcion(Component padre, Object mensaje, String titulo, int optionType, int messageType,
+			Color fondo, Color texto, Object[] opciones, Object opcionInicial, Icon icono) {
 		configurarEstilo(fondo, texto);
-		return JOptionPane.showOptionDialog(padre, mensaje, titulo, optionType, messageType, icono,
-				opciones, opcionInicial);
+		return JOptionPane.showOptionDialog(padre, mensaje, titulo, optionType, messageType, icono, opciones,
+				opcionInicial);
 	}
 
 	public static ResultadoConfirmacion confirmarConCheckbox(Component padre, String mensaje, String titulo,
@@ -50,8 +49,8 @@ public final class Dialogos {
 		contenido.add(noMostrarMas, BorderLayout.SOUTH);
 
 		Object[] opciones = {"Aceptar", "Cancelar"};
-		int respuesta = mostrarOpcion(padre, contenido, titulo, JOptionPane.DEFAULT_OPTION,
-				JOptionPane.WARNING_MESSAGE, fondo, texto, opciones, opciones[0], null);
+		int respuesta = mostrarOpcion(padre, contenido, titulo, JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,
+				fondo, texto, opciones, opciones[0], null);
 		return new ResultadoConfirmacion(respuesta == 0, noMostrarMas.isSelected());
 	}
 

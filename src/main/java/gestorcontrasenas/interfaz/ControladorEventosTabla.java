@@ -18,9 +18,8 @@ public final class ControladorEventosTabla {
 	private final Consumer<RegistroContrasena> seleccionarRegistro;
 	private final Consumer<String> alternarGrupo;
 
-	public ControladorEventosTabla(JTable tabla, ModeloCredenciales modelo, JTextField busqueda,
-			Runnable aplicarFiltro, Consumer<RegistroContrasena> seleccionarRegistro,
-			Consumer<String> alternarGrupo) {
+	public ControladorEventosTabla(JTable tabla, ModeloCredenciales modelo, JTextField busqueda, Runnable aplicarFiltro,
+			Consumer<RegistroContrasena> seleccionarRegistro, Consumer<String> alternarGrupo) {
 		this.tabla = Objects.requireNonNull(tabla, "tabla");
 		this.modelo = Objects.requireNonNull(modelo, "modelo");
 		this.busqueda = Objects.requireNonNull(busqueda, "busqueda");
@@ -59,8 +58,8 @@ public final class ControladorEventosTabla {
 				int filaModelo = tabla.convertRowIndexToModel(filaVista);
 				if (modelo.esFilaCabecera(filaModelo)) {
 					if (tabla.columnAtPoint(evento.getPoint()) == 0 && evento.getX() < 36) {
-						alternarGrupo.accept(ModeloCredenciales.normalizarServicio(
-								modelo.getValueAt(filaModelo, 0).toString()));
+						alternarGrupo.accept(
+								ModeloCredenciales.normalizarServicio(modelo.getValueAt(filaModelo, 0).toString()));
 					}
 					return;
 				}

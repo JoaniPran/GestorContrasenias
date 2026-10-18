@@ -17,8 +17,7 @@ public final class ProtectorVentana {
 	private final Consumer<String> informarFallo;
 	private boolean puedeMostrarContrasenas = true;
 
-	public ProtectorVentana(JFrame ventana, JTable tabla, Runnable ocultarContrasenas,
-			Consumer<String> informarFallo) {
+	public ProtectorVentana(JFrame ventana, JTable tabla, Runnable ocultarContrasenas, Consumer<String> informarFallo) {
 		this.ventana = Objects.requireNonNull(ventana, "ventana");
 		this.tabla = Objects.requireNonNull(tabla, "tabla");
 		this.ocultarContrasenas = Objects.requireNonNull(ocultarContrasenas, "ocultarContrasenas");

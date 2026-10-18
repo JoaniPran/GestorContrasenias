@@ -34,6 +34,14 @@ import java.util.Locale;
 import java.util.Set;
 import javax.swing.*;
 import javax.swing.table.TableRowSorter;
+import gestorcontrasenas.interfaz.DialogoConfiguracion;
+import gestorcontrasenas.modelo.RegistroContrasena;
+import gestorcontrasenas.servicio.ServicioExportacion;
+
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GestorContrasenas extends JFrame {
 	// Modo y Colores (Estilo Web Slate/Zinc)
@@ -99,11 +107,11 @@ public class GestorContrasenas extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
 		FlatSVGIcon iconoAplicacion = new FlatSVGIcon("icons/shield.svg", 32, 32);
-		iconoAplicacion.setColorFilter(new FlatSVGIcon.ColorFilter(color -> Color.WHITE.equals(color)
-				? COLOR_PRIMARY : color));
+		iconoAplicacion.setColorFilter(
+				new FlatSVGIcon.ColorFilter(color -> Color.WHITE.equals(color) ? COLOR_PRIMARY : color));
 		setIconImage(iconoAplicacion.getImage());
-		vista = new VistaGestorContrasenas(usuarioLogueado, colorCard, colorBorder,
-				colorResaltado, this::crearIconoEncabezado, this::reordenarGrupoDesdeVista);
+		vista = new VistaGestorContrasenas(usuarioLogueado, colorCard, colorBorder, colorResaltado,
+				this::crearIconoEncabezado, this::reordenarGrupoDesdeVista);
 		setContentPane(vista.construir());
 		modeloTabla = vista.getModelo();
 		tabla = vista.getTabla();
@@ -127,11 +135,10 @@ public class GestorContrasenas extends JFrame {
 
 	private void configurarEventos(BotonEstilizado btnGuardar, BotonEstilizado btnActualizar,
 			BotonEstilizado btnEliminar, BotonEstilizado btnLimpiar, BotonEstilizado btnImportarGoogle,
-			JButton btnConfiguracion,
-			BotonEstilizado btnCerrarSesion) {
+			JButton btnConfiguracion, BotonEstilizado btnCerrarSesion) {
 		ControladorRegistros controlador = new ControladorRegistros(tabla, modeloTabla, txtCuenta, txtUsuario,
-				txtPassword, servicioCredenciales, this::verificarAlmacenamientoDisponible,
-				this::guardarEnArchivo, new ControladorRegistros.Presentador() {
+				txtPassword, servicioCredenciales, this::verificarAlmacenamientoDisponible, this::guardarEnArchivo,
+				new ControladorRegistros.Presentador() {
 					@Override
 					public void mostrar(String mensaje, String titulo, int tipo) {
 						mostrarMensaje(mensaje, titulo, tipo);
@@ -140,9 +147,8 @@ public class GestorContrasenas extends JFrame {
 					@Override
 					public boolean confirmarEliminacion(int cantidad) {
 						return JOptionPane.showConfirmDialog(GestorContrasenas.this,
-								"¿Eliminar las " + cantidad + " contraseñas seleccionadas?",
-								"Confirmar eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE)
-								== JOptionPane.YES_OPTION;
+								"¿Eliminar las " + cantidad + " contraseñas seleccionadas?", "Confirmar eliminación",
+								JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION;
 					}
 				});
 		MenusContextuales.agregarMenuTexto(txtCuenta);
@@ -229,8 +235,7 @@ public class GestorContrasenas extends JFrame {
 	private FlatSVGIcon crearIconoEncabezado(String recurso, int tamano) {
 		Color tinta = modoOscuro ? Color.WHITE : Color.BLACK;
 		FlatSVGIcon icono = new FlatSVGIcon(recurso, tamano, tamano);
-		icono.setColorFilter(new FlatSVGIcon.ColorFilter(
-				color -> Color.WHITE.equals(color) ? tinta : color));
+		icono.setColorFilter(new FlatSVGIcon.ColorFilter(color -> Color.WHITE.equals(color) ? tinta : color));
 		return icono;
 	}
 
@@ -253,8 +258,15 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private void mostrarConfiguracion() {
-		new DialogoConfiguracion(this, modoOscuro, confirmarAntesDeMostrarContrasena, colorResaltado, colorCard,
-				colorInput, colorTextPrimary, colorTextMuted, this::establecerPreferencias).mostrar();
+		DialogoConfiguracion dialogo = new DialogoConfiguracion(this, modoOscuro, confirmarAntesDeMostrarContrasena,
+				colorResaltado, colorCard, colorInput, colorTextPrimary, colorTextMuted, (modo, confirmar, color) -> {
+					this.modoOscuro = modo;
+					this.confirmarAntesDeMostrarContrasena = confirmar;
+					this.colorResaltado = color;
+					establecerPreferencias(modo, confirmar, color);
+					return true;
+				}, this::exportarContrasenasCSV, vista.getCrearIcono());
+		dialogo.mostrar();
 	}
 
 	private void actualizarResumenBoveda() {
@@ -273,8 +285,8 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private void estilarTabla() {
-		new EstiloTablaCredenciales(colorCard, colorBorder, colorTextPrimary, colorTextMuted,
-				colorSeleccionTabla()).aplicar(tabla, scrollPane, modeloTabla);
+		new EstiloTablaCredenciales(colorCard, colorBorder, colorTextPrimary, colorTextMuted, colorSeleccionTabla())
+				.aplicar(tabla, scrollPane, modeloTabla);
 		ColumnaContrasena.instalar(tabla, accionesContrasena());
 	}
 
@@ -352,8 +364,8 @@ public class GestorContrasenas extends JFrame {
 
 	private boolean importarArchivoGoogle(Path archivo, JDialog dialogo) {
 		if (!archivo.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".csv")) {
-			mostrarMensajeEnDialogo(dialogo, "Selecciona un archivo con extensión .csv.",
-					"Formato no válido", JOptionPane.WARNING_MESSAGE);
+			mostrarMensajeEnDialogo(dialogo, "Selecciona un archivo con extensión .csv.", "Formato no válido",
+					JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
 		if (!verificarAlmacenamientoDisponible()) {
@@ -390,8 +402,8 @@ public class GestorContrasenas extends JFrame {
 		try {
 			almacenContrasenas.guardar(registrosActualizados);
 		} catch (Exception e) {
-			mostrarMensajeEnDialogo(dialogo, "No se pudo guardar la importación: " + e.getMessage(),
-					"Error al guardar", JOptionPane.ERROR_MESSAGE);
+			mostrarMensajeEnDialogo(dialogo, "No se pudo guardar la importación: " + e.getMessage(), "Error al guardar",
+					JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -403,10 +415,10 @@ public class GestorContrasenas extends JFrame {
 		reconstruirGruposServicios();
 		actualizarFiltroTabla();
 
-		mostrarMensajeEnDialogo(dialogo, "Importación completada."
-				+ "\nNuevas contraseñas: " + importacion.getAgregados()
-				+ "\nContraseñas reemplazadas: " + importacion.getReemplazados()
-				+ "\nFilas omitidas por campos vacíos: " + resultado.getOmitidos(),
+		mostrarMensajeEnDialogo(dialogo,
+				"Importación completada." + "\nNuevas contraseñas: " + importacion.getAgregados()
+						+ "\nContraseñas reemplazadas: " + importacion.getReemplazados()
+						+ "\nFilas omitidas por campos vacíos: " + resultado.getOmitidos(),
 				"Importación de Google", JOptionPane.INFORMATION_MESSAGE);
 		dialogo.dispose();
 		return true;
@@ -474,10 +486,7 @@ public class GestorContrasenas extends JFrame {
 		}
 
 		Dialogos.ResultadoConfirmacion resultado = Dialogos.confirmarConCheckbox(this,
-				"¿Está seguro que quiere mostrar la contraseña?",
-				"Mostrar contraseña",
-				colorCard,
-				colorTextPrimary,
+				"¿Está seguro que quiere mostrar la contraseña?", "Mostrar contraseña", colorCard, colorTextPrimary,
 				"No volver a mostrar este mensaje");
 		if (!resultado.isAceptado()) {
 			return false;
@@ -510,4 +519,51 @@ public class GestorContrasenas extends JFrame {
 			}
 		});
 	}
+
+	private void exportarContrasenasCSV() {
+		// 1. Pregunta de confirmación previa
+		int confirmacion = JOptionPane.showConfirmDialog(this,
+				"¿Está seguro que desea exportar todas sus contraseñas?\n\n"
+						+ "Se creará un archivo .csv en texto plano con sus credenciales.",
+				"Confirmar exportación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+		if (confirmacion != JOptionPane.YES_OPTION) {
+			return;
+		}
+
+		// 2. Selector de archivo destino
+		JFileChooser selector = new JFileChooser();
+		selector.setDialogTitle("Guardar copia de seguridad en CSV");
+		selector.setSelectedFile(new File("Google_Passwords_Export.csv"));
+		selector.setFileFilter(new FileNameExtensionFilter("Archivos CSV (*.csv)", "csv"));
+
+		int seleccion = selector.showSaveDialog(this);
+		if (seleccion == JFileChooser.APPROVE_OPTION) {
+			File archivoDestino = selector.getSelectedFile();
+			if (!archivoDestino.getName().toLowerCase().endsWith(".csv")) {
+				archivoDestino = new File(archivoDestino.getAbsolutePath() + ".csv");
+			}
+
+			try {
+				// Obtener datos desde la tabla a objetos del Modelo
+				List<RegistroContrasena> listaRegistros = new ArrayList<>();
+				for (int i = 0; i < modeloTabla.getRowCount(); i++) {
+					listaRegistros.add(new RegistroContrasena(modeloTabla.getValueAt(i, 0).toString(),
+							modeloTabla.getValueAt(i, 1).toString(), modeloTabla.getValueAt(i, 2).toString()));
+				}
+
+				// Delegar la generación del archivo al servicio
+				ServicioExportacion.exportarACSV(archivoDestino, listaRegistros);
+
+				JOptionPane.showMessageDialog(this,
+						"Contraseñas exportadas correctamente en:\n" + archivoDestino.getAbsolutePath(),
+						"Exportación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(this, "Error al exportar las contraseñas: " + e.getMessage(), "Error",
+						JOptionPane.ERROR_MESSAGE);
+			}
+		}
+	}
+
 }

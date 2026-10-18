@@ -18,8 +18,8 @@ public final class EstiloTablaCredenciales {
 	private final Color colorTextMuted;
 	private final Color colorSeleccion;
 
-	public EstiloTablaCredenciales(Color colorCard, Color colorBorder, Color colorTextPrimary,
-			Color colorTextMuted, Color colorSeleccion) {
+	public EstiloTablaCredenciales(Color colorCard, Color colorBorder, Color colorTextPrimary, Color colorTextMuted,
+			Color colorSeleccion) {
 		this.colorCard = colorCard;
 		this.colorBorder = colorBorder;
 		this.colorTextPrimary = colorTextPrimary;
@@ -50,11 +50,10 @@ public final class EstiloTablaCredenciales {
 			@Override
 			public Component getTableCellRendererComponent(JTable table, Object value, boolean seleccionado,
 					boolean tieneFoco, int fila, int columna) {
-				Component componente = super.getTableCellRendererComponent(table, value, seleccionado, tieneFoco,
-						fila, columna);
+				Component componente = super.getTableCellRendererComponent(table, value, seleccionado, tieneFoco, fila,
+						columna);
 				componente.setBackground(seleccionado ? table.getSelectionBackground() : colorCard);
-				setBorder(BorderFactory.createCompoundBorder(
-						BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
+				setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorder),
 						new EmptyBorder(0, 10, 0, 10)));
 				return componente;
 			}
@@ -76,8 +75,8 @@ public final class EstiloTablaCredenciales {
 		@Override
 		public Component getTableCellRendererComponent(JTable tabla, Object valor, boolean seleccionado,
 				boolean tieneFoco, int fila, int columna) {
-			Component componente = super.getTableCellRendererComponent(tabla, valor, seleccionado, tieneFoco,
-					fila, columna);
+			Component componente = super.getTableCellRendererComponent(tabla, valor, seleccionado, tieneFoco, fila,
+					columna);
 			int filaModelo = tabla.convertRowIndexToModel(fila);
 			setText(modelo.esFilaCabecera(filaModelo) ? "" : String.valueOf(valor));
 			setBackground(seleccionado ? tabla.getSelectionBackground() : colorCard);
@@ -98,8 +97,8 @@ public final class EstiloTablaCredenciales {
 		@Override
 		public Component getTableCellRendererComponent(JTable tabla, Object valor, boolean seleccionado,
 				boolean tieneFoco, int fila, int columna) {
-			Component componente = super.getTableCellRendererComponent(tabla, valor, seleccionado, tieneFoco,
-					fila, columna);
+			Component componente = super.getTableCellRendererComponent(tabla, valor, seleccionado, tieneFoco, fila,
+					columna);
 			int filaModelo = tabla.convertRowIndexToModel(fila);
 			String servicio = ModeloCredenciales.normalizarServicio(String.valueOf(valor));
 			int cantidad = modelo.cantidadPorServicio(servicio);
@@ -145,8 +144,7 @@ public final class EstiloTablaCredenciales {
 		@Override
 		public void paintIcon(Component componente, java.awt.Graphics graphics, int x, int y) {
 			java.awt.Graphics2D g2 = (java.awt.Graphics2D) graphics.create();
-			g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
-					java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
 			g2.setColor(componente.getForeground());
 			if (expandido) {
 				g2.fillPolygon(new int[]{x + 1, x + 9, x + 5}, new int[]{y + 3, y + 3, y + 8}, 3);
