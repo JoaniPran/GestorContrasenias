@@ -2,6 +2,18 @@
 target/
 *.class
 
+# Visual Studio Code
+.vscode/
+*.code-workspace
+.history/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
 # Datos locales de KeyVault (hashes y bóvedas cifradas)
 usuarios.csv
 contrasenas_*.csv
