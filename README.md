@@ -57,9 +57,9 @@ cp target/segusena-1.0.0.jar target/portable-input/
 jpackage \
 	--type app-image \
 	--name Segusena \
-	--app-version 1.0.0 \
+	--app-version 1.0.1 \
 	--input target/portable-input \
-	--main-jar segusena-1.0.0.jar \
+	--main-jar segusena-1.0.1.jar \
 	--main-class gestorcontrasenas.GestorContrasenas \
 	--dest portable
 ```
