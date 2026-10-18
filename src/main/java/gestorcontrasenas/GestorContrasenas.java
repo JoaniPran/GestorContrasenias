@@ -521,7 +521,6 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private void exportarContrasenasCSV() {
-		// 1. Pregunta de confirmación previa
 		int confirmacion = JOptionPane.showConfirmDialog(this,
 				"¿Está seguro que desea exportar todas sus contraseñas?\n\n"
 						+ "Se creará un archivo .csv en texto plano con sus credenciales.",
@@ -530,8 +529,6 @@ public class GestorContrasenas extends JFrame {
 		if (confirmacion != JOptionPane.YES_OPTION) {
 			return;
 		}
-
-		// 2. Selector de archivo destino
 		JFileChooser selector = new JFileChooser();
 		selector.setDialogTitle("Guardar copia de seguridad en CSV");
 		selector.setSelectedFile(new File("Google_Passwords_Export.csv"));

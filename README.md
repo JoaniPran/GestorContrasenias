@@ -59,6 +59,7 @@ jpackage \
 	--name Segusena \
 	--app-version 1.0.1 \
 	--input target/portable-input \
+	--icon assets/shield.png \
 	--main-jar segusena-1.0.1.jar \
 	--main-class gestorcontrasenas.GestorContrasenas \
 	--dest portable
