@@ -28,6 +28,7 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 
 public final class DialogoConfiguracion {
 	private static final Color[] COLORES_RESALTADO = {new Color(0, 122, 204), new Color(46, 139, 139),
@@ -144,27 +145,32 @@ public final class DialogoConfiguracion {
 
 		// --- SECCIÓN DE COPIA DE SEGURIDAD ---
 		if (accionExportar != null) {
-			opciones.add(Box.createVerticalStrut(16));
+    opciones.add(Box.createVerticalStrut(16));
 
-			JLabel etiquetaExportar = new JLabel("Copia de seguridad");
-			etiquetaExportar.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 12));
-			etiquetaExportar.setForeground(colorTextPrimary);
-			etiquetaExportar.setAlignmentX(Component.LEFT_ALIGNMENT);
-			opciones.add(etiquetaExportar);
-			opciones.add(Box.createVerticalStrut(6));
+    JLabel etiquetaExportar = new JLabel("Copia de seguridad");
+    etiquetaExportar.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 12));
+    etiquetaExportar.setForeground(colorTextPrimary);
+    etiquetaExportar.setAlignmentX(Component.LEFT_ALIGNMENT);
+    opciones.add(etiquetaExportar);
+    opciones.add(Box.createVerticalStrut(6));
 
-			BotonEstilizado btnExportar = new BotonEstilizado(" Exportar contraseñas (.csv)", COLOR_PRIMARY,
-					COLOR_PRIMARY_HOVER, 8);
-			btnExportar.setAlignmentX(Component.LEFT_ALIGNMENT);
+    BotonEstilizado btnExportar = new BotonEstilizado(" Exportar contraseñas (.csv)", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);
+    btnExportar.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+    if (crearIcono != null) {
+        Icon icono = crearIcono.apply("icons/external-link.svg", 12);
 
-			if (crearIcono != null) {
-				btnExportar.setIcon(crearIcono.apply("icons/external-link.svg", 14));
-			}
+        if (icono instanceof FlatSVGIcon svgIcon) {
 
-			btnExportar.addActionListener(e -> accionExportar.run());
-			opciones.add(btnExportar);
-		}
+            svgIcon.setColorFilter(new FlatSVGIcon.ColorFilter(color -> color.WHITE));
+            
+      
+        btnExportar.setIcon(icono);
+    }
+
+    btnExportar.addActionListener(e -> accionExportar.run());
+    opciones.add(btnExportar);
+}
 
 		panel.add(opciones, BorderLayout.CENTER);
 
@@ -185,6 +191,7 @@ public final class DialogoConfiguracion {
 		dialogo.pack();
 		dialogo.setLocationRelativeTo(propietario);
 		dialogo.setVisible(true);
+		}
 	}
 
 	@FunctionalInterface
