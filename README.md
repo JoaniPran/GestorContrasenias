@@ -38,7 +38,7 @@ También puedes compilar y ejecutar el JAR manualmente en cualquier sistema con 
 
 ```sh
 mvn package
-java -jar target/segusena-1.0.0.jar
+java -jar target/segusena-1.0.1.jar
 ```
 
 Al iniciar, crea una cuenta con **Registrar** (usuario y contraseña maestra de al menos 12 caracteres), luego inicia sesión. Puedes marcar **Recordar usuario** para completar el nombre de usuario en próximos inicios; la contraseña maestra nunca se recuerda. Las contraseñas de tus servicios se agregan desde el formulario principal; puedes buscarlas, editarlas y eliminarlas desde allí. El botón **Importar Google** permite seleccionar o arrastrar un CSV de Google Password Manager; valida las columnas `name`, `url`, `username`, `password` y `note`, importa nombre, usuario y contraseña, y reemplaza la contraseña cuando ya existe el mismo servicio y usuario. El icono de engranaje permite cambiar el tema claro/oscuro, que se guarda por usuario.
@@ -52,7 +52,7 @@ Se necesita Maven y un JDK que incluya `jpackage`. Desde la raíz del proyecto, 
 ```sh
 mvn clean package
 mkdir -p target/portable-input portable
-cp target/segusena-1.0.0.jar target/portable-input/
+cp target/segusena-1.0.1.jar target/portable-input/
 
 jpackage \
 	--type app-image \
