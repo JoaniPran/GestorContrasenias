@@ -38,62 +38,69 @@ public final class NavegacionTeclado {
 		}
 	}
 
-	public static void habilitarSalidaTabla(JTable tabla) {
-		var inputMap = tabla.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-		var actionMap = tabla.getActionMap();
+public static void habilitarSalidaTabla(JTable tabla) {
+    var inputMap = tabla.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+    var actionMap = tabla.getActionMap();
 
-		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "navegarArribaOSalir");
-		actionMap.put("navegarArribaOSalir", new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				int filaSeleccionada = tabla.getSelectedRow();
-				if (filaSeleccionada <= 0) {
-					tabla.clearSelection();
-					tabla.transferFocusBackward(); // Salir al componente anterior
-				} else {
-					tabla.setRowSelectionInterval(filaSeleccionada - 1, filaSeleccionada - 1);
-				}
-			}
-		});
+    // 1. FLECHA ARRIBA: Navegar hacia arriba y hacer scroll o salir de la tabla
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "navegarArribaOSalir");
+    actionMap.put("navegarArribaOSalir", new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            int filaSeleccionada = tabla.getSelectedRow();
+            if (filaSeleccionada <= 0) {
+                tabla.clearSelection();
+                tabla.transferFocusBackward(); // Salir al componente anterior
+            } else {
+                int nuevaFila = filaSeleccionada - 1;
+                tabla.setRowSelectionInterval(nuevaFila, nuevaFila);
+                // Forzar al JScrollPane a desplazarse a la fila visible
+                tabla.scrollRectToVisible(tabla.getCellRect(nuevaFila, 0, true));
+            }
+        }
+    });
 
-		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "navegarAbajoOSalir");
-		actionMap.put("navegarAbajoOSalir", new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				int filaSeleccionada = tabla.getSelectedRow();
-				int totalFilas = tabla.getRowCount();
-				if (filaSeleccionada == -1 || filaSeleccionada >= totalFilas - 1) {
-					tabla.clearSelection();
-					tabla.transferFocus(); // Salir al siguiente componente
-				} else {
-					tabla.setRowSelectionInterval(filaSeleccionada + 1, filaSeleccionada + 1);
-				}
-			}
-		});
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "navegarAbajoOSalir");
+    actionMap.put("navegarAbajoOSalir", new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            int filaSeleccionada = tabla.getSelectedRow();
+            int totalFilas = tabla.getRowCount();
+            if (filaSeleccionada == -1 || filaSeleccionada >= totalFilas - 1) {
+                tabla.clearSelection();
+                tabla.transferFocus(); // Salir al siguiente componente
+            } else {
+                int nuevaFila = filaSeleccionada + 1;
+                tabla.setRowSelectionInterval(nuevaFila, nuevaFila);
+                // Forzar al JScrollPane a desplazarse a la fila visible
+                tabla.scrollRectToVisible(tabla.getCellRect(nuevaFila, 0, true));
+            }
+        }
+    });
 
-		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), "salirTablaSiguiente");
-		actionMap.put("salirTablaSiguiente", new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				tabla.transferFocus();
-			}
-		});
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), "salirTablaSiguiente");
+    actionMap.put("salirTablaSiguiente", new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            tabla.transferFocus();
+        }
+    });
 
-		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, KeyEvent.SHIFT_DOWN_MASK), "salirTablaAnterior");
-		actionMap.put("salirTablaAnterior", new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				tabla.transferFocusBackward();
-			}
-		});
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, KeyEvent.SHIFT_DOWN_MASK), "salirTablaAnterior");
+    actionMap.put("salirTablaAnterior", new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            tabla.transferFocusBackward();
+        }
+    });
 
-		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "escaparTabla");
-		actionMap.put("escaparTabla", new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				tabla.clearSelection();
-				tabla.transferFocusBackward();
-			}
-		});
-	}
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "escaparTabla");
+    actionMap.put("escaparTabla", new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            tabla.clearSelection();
+            tabla.transferFocusBackward();
+        }
+    });
+}
 }
