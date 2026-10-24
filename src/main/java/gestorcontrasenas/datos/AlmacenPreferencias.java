@@ -15,7 +15,7 @@ public final class AlmacenPreferencias {
 	private static final String PREFIJO_CONFIRMAR_PASSWORD = "confirmarMostrarContrasena.";
 	private static final String PREFIJO_COLOR_RESALTADO = "colorResaltado.";
 	private static final String USUARIO_RECORDADO = "usuarioRecordado";
-	private static final Color COLOR_RESALTADO_PREDETERMINADO = new Color(0, 122, 204);
+	private static final Color COLOR_RESALTADO_PREDETERMINADO = Color.BLACK;
 
 	private AlmacenPreferencias() {
 	}

@@ -68,6 +68,7 @@ public final class DialogoConfiguracion {
 	}
 
 	public void mostrar() {
+
 		JDialog dialogo = new JDialog(propietario, "Configuración", JDialog.ModalityType.APPLICATION_MODAL);
 		JPanel panel = new JPanel(new BorderLayout(12, 18));
 		panel.setBorder(new EmptyBorder(20, 22, 18, 22));
@@ -145,52 +146,52 @@ public final class DialogoConfiguracion {
 
 		// --- SECCIÓN DE COPIA DE SEGURIDAD ---
 		if (accionExportar != null) {
-    opciones.add(Box.createVerticalStrut(16));
+			opciones.add(Box.createVerticalStrut(16));
 
-    JLabel etiquetaExportar = new JLabel("Copia de seguridad");
-    etiquetaExportar.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 12));
-    etiquetaExportar.setForeground(colorTextPrimary);
-    etiquetaExportar.setAlignmentX(Component.LEFT_ALIGNMENT);
-    opciones.add(etiquetaExportar);
-    opciones.add(Box.createVerticalStrut(6));
+			JLabel etiquetaExportar = new JLabel("Copia de seguridad");
+			etiquetaExportar.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 12));
+			etiquetaExportar.setForeground(colorTextPrimary);
+			etiquetaExportar.setAlignmentX(Component.LEFT_ALIGNMENT);
+			opciones.add(etiquetaExportar);
+			opciones.add(Box.createVerticalStrut(6));
 
-    BotonEstilizado btnExportar = new BotonEstilizado(" Exportar contraseñas (.csv)", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);
-    btnExportar.setAlignmentX(Component.LEFT_ALIGNMENT);
+			BotonEstilizado btnExportar = new BotonEstilizado(" Exportar contraseñas (.csv)", COLOR_PRIMARY,
+					COLOR_PRIMARY_HOVER, 8);
+			btnExportar.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-    if (crearIcono != null) {
-        Icon icono = crearIcono.apply("icons/external-link.svg", 12);
+			if (crearIcono != null) {
+				Icon icono = crearIcono.apply("icons/external-link.svg", 12);
 
-        if (icono instanceof FlatSVGIcon svgIcon) {
+				if (icono instanceof FlatSVGIcon svgIcon) {
 
-            svgIcon.setColorFilter(new FlatSVGIcon.ColorFilter(color -> color.WHITE));
-            
-      
-        btnExportar.setIcon(icono);
-    }
+					svgIcon.setColorFilter(new FlatSVGIcon.ColorFilter(color -> color.WHITE));
 
-    btnExportar.addActionListener(e -> accionExportar.run());
-    opciones.add(btnExportar);
-}
+					btnExportar.setIcon(icono);
+				}
 
-		panel.add(opciones, BorderLayout.CENTER);
-
-		BotonEstilizado aplicar = new BotonEstilizado("Aplicar", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);
-		aplicar.addActionListener(e -> {
-			if (aplicador.aplicar(interruptor.isSelected(), confirmarPassword.isSelected(), colorElegido[0])) {
-				dialogo.dispose();
+				btnExportar.addActionListener(e -> accionExportar.run());
+				opciones.add(btnExportar);
 			}
-		});
-		JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-		acciones.setOpaque(false);
-		acciones.add(aplicar);
-		panel.add(acciones, BorderLayout.SOUTH);
 
-		dialogo.setContentPane(panel);
-		dialogo.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-		dialogo.setResizable(false);
-		dialogo.pack();
-		dialogo.setLocationRelativeTo(propietario);
-		dialogo.setVisible(true);
+			panel.add(opciones, BorderLayout.CENTER);
+
+			BotonEstilizado aplicar = new BotonEstilizado("Aplicar", COLOR_PRIMARY, COLOR_PRIMARY_HOVER, 8);
+			aplicar.addActionListener(e -> {
+				if (aplicador.aplicar(interruptor.isSelected(), confirmarPassword.isSelected(), colorElegido[0])) {
+					dialogo.dispose();
+				}
+			});
+			JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+			acciones.setOpaque(false);
+			acciones.add(aplicar);
+			panel.add(acciones, BorderLayout.SOUTH);
+
+			dialogo.setContentPane(panel);
+			dialogo.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+			dialogo.setResizable(false);
+			dialogo.pack();
+			dialogo.setLocationRelativeTo(propietario);
+			dialogo.setVisible(true);
 		}
 	}
 

@@ -33,7 +33,7 @@ public class DialogoAutenticacion extends JDialog {
 	public boolean exito = false;
 	public String usuarioAutenticado = "";
 	public String claveMaestra = "";
-	
+
 	public DialogoAutenticacion(boolean esRegistro) {
 		setTitle("Autenticación - Gestos de Contraseñas");
 		setModal(true);
@@ -167,5 +167,5 @@ public class DialogoAutenticacion extends JDialog {
 		gbc.insets = new Insets(fila % 2 == 0 ? 4 : 2, 0, fila % 2 == 0 ? 2 : 8, 0);
 		formulario.add(componente, gbc);
 	}
-	
+
 }

@@ -155,8 +155,8 @@ public final class VistaGestorContrasenas {
 		btnConfiguracion.setIcon(crearIcono.apply("icons/settings.svg", 16));
 		btnConfiguracion.setToolTipText("Configuración");
 		btnConfiguracion.setPreferredSize(new Dimension(36, 36));
-		btnConfiguracion.setFocusable(false);
-		btnConfiguracion.setBorderPainted(false);
+		btnConfiguracion.setFocusable(true);
+		btnConfiguracion.setBorderPainted(true);
 		btnConfiguracion.setContentAreaFilled(false);
 		btnConfiguracion.setOpaque(false);
 		btnConfiguracion.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -433,18 +433,18 @@ public final class VistaGestorContrasenas {
 	}
 
 	private void configurarComportamientoTeclado() {
-        txtCuenta.addActionListener(e -> btnGuardar.doClick());
-        txtUsuario.addActionListener(e -> btnGuardar.doClick());
-        txtPassword.addActionListener(e -> btnGuardar.doClick());
+		txtCuenta.addActionListener(e -> btnGuardar.doClick());
+		txtUsuario.addActionListener(e -> btnGuardar.doClick());
+		txtPassword.addActionListener(e -> btnGuardar.doClick());
 
-        // Vincular el botón "Guardar" como botón predeterminado de la ventana
-        SwingUtilities.invokeLater(() -> {
-            JRootPane rootPane = panelPrincipal.getRootPane();
-            if (rootPane != null) {
-                NavegacionTeclado.vincularBotonPorDefecto(rootPane, btnGuardar);
-            }
-        });
-    }
+		// Vincular el botón "Guardar" como botón predeterminado de la ventana
+		SwingUtilities.invokeLater(() -> {
+			JRootPane rootPane = panelPrincipal.getRootPane();
+			if (rootPane != null) {
+				NavegacionTeclado.vincularBotonPorDefecto(rootPane, btnGuardar);
+			}
+		});
+	}
 
 	public ModeloCredenciales getModelo() {
 		return modelo;
