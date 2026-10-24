@@ -20,6 +20,7 @@ import gestorcontrasenas.interfaz.MenusContextuales;
 import gestorcontrasenas.interfaz.ModeloCredenciales;
 import gestorcontrasenas.interfaz.TemaColores;
 import gestorcontrasenas.interfaz.VistaGestorContrasenas;
+import gestorcontrasenas.servicio.NavegacionTeclado;
 import gestorcontrasenas.modelo.RegistroContrasena;
 import gestorcontrasenas.servicio.ServicioCredenciales;
 import gestorcontrasenas.servicio.ServicioCredenciales.ResultadoImportacion;
@@ -329,7 +330,7 @@ public class GestorContrasenas extends JFrame {
 				int cantidad = contrasena.codePointCount(0, contrasena.length());
 				StringBuilder mascara = new StringBuilder(cantidad);
 				for (int i = 0; i < cantidad; i++) {
-					mascara.append('•');
+					mascara.append('*');
 				}
 				return mascara.toString();
 			}
@@ -357,7 +358,7 @@ public class GestorContrasenas extends JFrame {
 	}
 
 	private void mostrarImportacionGoogle() {
-		JDialog dialogo = new JDialog(this, "Importar contraseñas de Google", true);
+		JDialog dialogo = new JDialog(this, "Importar contraseñas", true);
 		new DialogoImportacionGoogle(dialogo, colorCard, colorInput, colorTextPrimary, colorBorder,
 				this::importarArchivoGoogle).mostrar();
 	}
@@ -419,7 +420,7 @@ public class GestorContrasenas extends JFrame {
 				"Importación completada." + "\nNuevas contraseñas: " + importacion.getAgregados()
 						+ "\nContraseñas reemplazadas: " + importacion.getReemplazados()
 						+ "\nFilas omitidas por campos vacíos: " + resultado.getOmitidos(),
-				"Importación de Google", JOptionPane.INFORMATION_MESSAGE);
+				"Importación", JOptionPane.INFORMATION_MESSAGE);
 		dialogo.dispose();
 		return true;
 	}
@@ -510,7 +511,7 @@ public class GestorContrasenas extends JFrame {
 
 	public static void main(String[] args) {
 		FlatDarkLaf.setup();
-
+		NavegacionTeclado.inicializarNavegacionGlobal();
 		SwingUtilities.invokeLater(() -> {
 			DialogoAutenticacion diag = new DialogoAutenticacion(false);
 			diag.setVisible(true);
@@ -542,16 +543,7 @@ public class GestorContrasenas extends JFrame {
 			}
 
 			try {
-				// Obtener datos desde la tabla a objetos del Modelo
-				List<RegistroContrasena> listaRegistros = new ArrayList<>();
-				for (int i = 0; i < modeloTabla.getRowCount(); i++) {
-					listaRegistros.add(new RegistroContrasena(modeloTabla.getValueAt(i, 0).toString(),
-							modeloTabla.getValueAt(i, 1).toString(), modeloTabla.getValueAt(i, 2).toString()));
-				}
-
-				// Delegar la generación del archivo al servicio
-				ServicioExportacion.exportarACSV(archivoDestino, listaRegistros);
-
+				ServicioExportacion.exportarACSV(archivoDestino, modeloTabla.obtenerRegistros());
 				JOptionPane.showMessageDialog(this,
 						"Contraseñas exportadas correctamente en:\n" + archivoDestino.getAbsolutePath(),
 						"Exportación Exitosa", JOptionPane.INFORMATION_MESSAGE);

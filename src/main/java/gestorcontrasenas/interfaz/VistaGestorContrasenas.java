@@ -8,6 +8,9 @@ import static gestorcontrasenas.interfaz.PaletaColores.COLOR_PRIMARY;
 import static gestorcontrasenas.interfaz.PaletaColores.COLOR_PRIMARY_HOVER;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+
+import gestorcontrasenas.servicio.NavegacionTeclado;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -31,10 +34,12 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.BorderFactory;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableRowSorter;
@@ -99,6 +104,7 @@ public final class VistaGestorContrasenas {
 
 		panelPrincipal.add(crearPanelHeader(), BorderLayout.NORTH);
 		panelPrincipal.add(crearPanelContenido(), BorderLayout.CENTER);
+		configurarComportamientoTeclado();
 		return panelPrincipal;
 	}
 
@@ -335,7 +341,7 @@ public final class VistaGestorContrasenas {
 		eliminar.setIcon(new FlatSVGIcon("icons/trash.svg", 16, 16));
 		BotonEstilizado limpiar = new BotonEstilizado("Limpiar", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
 		limpiar.setIcon(new FlatSVGIcon("icons/delete.svg", 16, 16));
-		BotonEstilizado importar = new BotonEstilizado("Importar Google", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
+		BotonEstilizado importar = new BotonEstilizado("Importar Constraseñas", COLOR_BOTON, COLOR_BOTON_HOVER, 8);
 		importar.setIcon(new FlatSVGIcon("icons/upload.svg", 16, 16));
 
 		JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
@@ -386,6 +392,7 @@ public final class VistaGestorContrasenas {
 			ordenador.setSortable(columna, false);
 		}
 		nuevaTabla.setRowSorter(ordenador);
+		NavegacionTeclado.habilitarSalidaTabla(nuevaTabla);
 		return nuevaTabla;
 	}
 
@@ -424,6 +431,20 @@ public final class VistaGestorContrasenas {
 		componentesEstilizados.add(campo);
 		return campo;
 	}
+
+	private void configurarComportamientoTeclado() {
+        txtCuenta.addActionListener(e -> btnGuardar.doClick());
+        txtUsuario.addActionListener(e -> btnGuardar.doClick());
+        txtPassword.addActionListener(e -> btnGuardar.doClick());
+
+        // Vincular el botón "Guardar" como botón predeterminado de la ventana
+        SwingUtilities.invokeLater(() -> {
+            JRootPane rootPane = panelPrincipal.getRootPane();
+            if (rootPane != null) {
+                NavegacionTeclado.vincularBotonPorDefecto(rootPane, btnGuardar);
+            }
+        });
+    }
 
 	public ModeloCredenciales getModelo() {
 		return modelo;
